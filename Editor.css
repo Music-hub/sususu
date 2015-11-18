@@ -1,0 +1,40 @@
+html ,body {
+  position: absolute;
+  width:100%;
+  height:100%;
+  margin:inherit;
+  background:#ffffff;
+  font-family: "calluna",Georgia,"Times New Roman",Times,serif;
+}
+
+#tool_bar{
+    width:100%;
+    position:fixed;
+
+}
+
+#tool{
+   
+
+}
+
+#edit {
+    height: 1000px;
+    margin: 210px;
+    background-color: #666666;
+    background: #ffffff;
+    box-shadow: 0 0 3px #333333;
+}
+
+.write {
+    margin: 20px;
+} 
+
+.footer {
+  text-align: center;
+  background:#333333;
+  color: #dddddd;
+}
+.footer a {
+  color: #dddddd;
+}
