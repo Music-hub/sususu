@@ -151,6 +151,7 @@ NoteEffect.processEffect = function processEffect(effectMap) {
 				
 				effectSet = effectMap.tuplet[id];
 				notes = effectSet.notes;
+				if (notes.length < 2) continue;
 				var tuplet = new Vex.Flow.Tuplet(notes);
 				drawables.push(tuplet);
 			}
@@ -390,7 +391,6 @@ SheetManager.prototype.createNote = function createNote() {
 	}
 	//console.log(this.noteTable);
 }
-
 SheetManager.prototype.addNoteEffect = function addNoteEffect() {
 	var allEffect = {};
 	this.noteTable.allStaves().reduce(function (current, self) {
@@ -474,6 +474,17 @@ SheetManager.prototype.alignNote = function alignNote() {
 			voices.push(this.voiceTable.staveByTrack(j, i));
 			staves.push(this.staveTable.staveByTrack(j, i));
 		}
+		voices = voices.filter(function (voice) {
+			return voice.tickables.length !== 0;
+		})
+		// not voice need to be handeld
+		if (!voices.length) continue;
+		
+		// use the longest voice to fulfill the stave length
+		voices = voices.sort(function (voiceA, voiceB) {
+			return voiceA.getTicksUsed().value() > voiceB.getTicksUsed().value() ? -1 : 1;
+		})
+		
 		minX = Math.max.apply(null, staves.map(function (stave) {return stave.getNoteStartX()}));
 		staves.forEach(function (stave) {
 			stave.setNoteStartX(minX);
@@ -698,6 +709,9 @@ SheetManager.prototype.setColor = function setColor(track, measure, note, color)
 	
 	return true;
 }
+/*
+ * methods for modify the sheet
+ */
 SheetManager.prototype.insertNote = function insertNote(index, note) {
 	var measure, sheet =this.sheet;
 	try {
@@ -717,6 +731,19 @@ SheetManager.prototype.insertNote = function insertNote(index, note) {
 		return false;
 	}
 }
+SheetManager.prototype.removeNote = function removeNote(index) {
+	var measure, sheet =this.sheet;
+	try {
+		measure = sheet.tracks[index[0]].measures[index[1]];
+		if (measure.notes.length <= index[2]) return false;
+		measure.notes.splice(index[2], 1);
+		return true;
+	} catch (e) {
+		console.error(e)
+		return false;
+	}
+}
+
 /*
  * Emits:
  *   hover_note
