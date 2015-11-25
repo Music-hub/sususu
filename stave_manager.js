@@ -1,3 +1,4 @@
+/* global EventEmitter, Vex */
 /*
  * tracks : [track]
  * track : {measures: [measure], info: {}}
@@ -222,7 +223,7 @@ MeasureManager.prototype.allStaves = function allMeasures() {
 	return measures;
 }
 
-inherits = function(ctor, superCtor) {
+var inherits = function(ctor, superCtor) {
   ctor.super_ = superCtor;
   ctor.prototype = Object.create(superCtor.prototype, {
     constructor: {
@@ -335,6 +336,7 @@ SheetManager.prototype.preDrawSheet = function preDrawSheet() {
 	this.addAccidental()
 	this.addBeam();
 	this.alignNote();
+	this.postNoteFormat();
 	
 }
 
@@ -490,6 +492,37 @@ SheetManager.prototype.alignNote = function alignNote() {
 		}
 	}
 }
+/*
+ * since the note with beam only has stem after the the `postFormat` of `Beam` 
+ * got called, so we must trigger it to ensure we has stem since we need this
+ * to colorlize the note.
+ */
+SheetManager.prototype.postNoteFormat = function postFormat() {
+	var i, j, voice, stave,
+	    self = this,
+	    tracks = this.voiceTable.tracks,
+	    measures = this.voiceTable.measures;
+	
+	// the beam need this to got call before it could generate stem
+	for (i = 0; i < tracks; i++) {
+		for (j = 0; j < measures; j++) {
+			voice = this.voiceTable.staveByTrack(i, j);
+			stave = this.staveTable.staveByTrack(i, j);
+			//console.log(i, j, voice, stave);
+			voice.setStave(stave);
+			voice.preFormat();
+		}
+	}
+	
+	this.noteDrawables.forEach(function (drawable) {
+		// console.log(drawable, drawable instanceof Vex.Flow.Beam);
+		if (!(drawable instanceof Vex.Flow.Beam)) return;
+		drawable.setContext(self.ctx);
+		if (drawable.postFormat) {
+			drawable.postFormat();
+		}
+	})
+}
 SheetManager.prototype.drawNote = function drawNote() {
 	var i, j, voice, stave,
 	    self = this,
@@ -500,11 +533,11 @@ SheetManager.prototype.drawNote = function drawNote() {
 			voice = this.voiceTable.staveByTrack(i, j);
 			stave = this.staveTable.staveByTrack(i, j);
 			//console.log(i, j, voice, stave);
-			if (self.firstDraw) {
+			/* if (self.firstDraw) {
 				voice.draw(this.ctx, stave);
-			} else {
+			} else { */
 				voice.draw(this.ctx);
-			}
+			/* } */
 		}
 	}
 	self.firstDraw = false;
@@ -630,7 +663,7 @@ SheetManager.prototype.getAllNoteBoundingBox = function getAllNoteBoundingBox() 
 	return boundingBoxTable;
 }
 SheetManager.prototype.getAllStaveBoundingBox = function getAllStaveBoundingBox() {
-	var i, j, boxs,
+	var i, j, box,
 	    tracks = this.staveTable.tracks,
 	    measures = this.staveTable.measures,
 	    boundingBoxTable =  new MeasureManager (tracks, measures, this.options.cols);
@@ -653,7 +686,7 @@ SheetManager.prototype.setColor = function setColor(track, measure, note, color)
 		measure = track[1];
 		track = track[0];
 	}
-	console.log('set color: ', track, measure, note)
+	// console.log('set color: ', track, measure, note)
 	try {
 		var staveNote = this.noteTable.staveByTrack(track, measure)[note];
 	} catch (e) {

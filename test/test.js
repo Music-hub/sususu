@@ -1,4 +1,34 @@
+/* global Sheet, Channel, Measure, Note, NoteEffect, SheetManager */
 
+function runTest(name, test, discription) {
+  var wrapOut = $('<div>').addClass('wrap-out').appendTo('body');
+  var title = $('<h1>').text(name).appendTo(wrapOut);
+  if (discription) {
+  	var discription = $('<p>').text(discription).appendTo(wrapOut);
+  }
+	var container = $('<div>').addClass('wrap').appendTo(wrapOut);
+	var canvas = $("<canvas>").appendTo(container)[0];
+	var success = true;
+	try {
+    test(canvas, container);
+	} catch (e) {
+	  wrapOut.append(
+	    $('<p>').text(e.toString())
+	  )
+	  if (e.stack) {
+	    wrapOut.append(
+  	    $('<p>').text(e.stack.toString())
+  	  )
+	  }
+	  console.error(e);
+	  success = false;
+	}
+	if (success) {
+	  wrapOut.append(
+	    $('<p>').text('done - without error')
+	  )
+	}
+}
 
 function getSheet () {
 	var sheet = Sheet([
@@ -67,7 +97,7 @@ function getSheet () {
 }
 
 //test2
-function createCanvas () {
+function createCanvas (canvas, container) {
 	var container = $('<div>').appendTo('body').addClass('wrap');
 	var canvas = $("<canvas>").appendTo(container)[0];
 	
@@ -76,10 +106,8 @@ function createCanvas () {
 	return canvas;
 }
 
-
-function testSheet () {
+function testSheet (canvas, container) {
 	var sheet = getSheet();
-	var canvas = createCanvas();
 	var manager = new SheetManager(canvas);
 	
 	manager.setSheet(sheet, {cols: 3, width: 1000});
@@ -87,19 +115,17 @@ function testSheet () {
 	manager.drawSheet();
 	console.log(manager)
 }
-
-function testSerialize() {
+function testSerialize(canvas, container) {
 	var sheet = getSheet();
 	
 	// Serialize it
-	sheet = sheet.toObject()
+	sheet = sheet.toObject(canvas, container)
 	console.log(sheet, JSON.stringify(sheet, 0, 4))
 	console.log(sheet, JSON.stringify(sheet))
 	// then Deserialize it
 	sheet = Sheet.fromObject(sheet);
 	console.log(sheet)
 	
-	var canvas = createCanvas();
 	var manager = new SheetManager(canvas);
 	
 	manager.setSheet(sheet, {cols: 3, width: 1000});
@@ -107,10 +133,8 @@ function testSerialize() {
 	manager.drawSheet();
 	console.log(manager)
 }
-
-function testBoundingBox() {
+function testBoundingBox(canvas, container) {
 	var sheet = getSheet();
-	var canvas = createCanvas()
 	var manager = new SheetManager(canvas);
 	
 	manager.setSheet(sheet, {cols: 3, width: 1000});
@@ -118,7 +142,7 @@ function testBoundingBox() {
 	manager.drawSheet();
 	console.log(manager, manager.getAllNoteBoundingBox())
 	
-	var container = $(canvas).parent();
+  container = $(container);
 	
 	manager.getAllNoteBoundingBox().allStaves().reduce(function (i, j) {return i.concat(j)}, []).forEach(function (box) {
 		
@@ -144,16 +168,14 @@ function testBoundingBox() {
 		)
 	})
 }
-
-function testColor() {
+function testColor(canvas, container) {
 	var sheet = getSheet();
-	var canvas = createCanvas()
 	var manager = new SheetManager(canvas);
 	
 	manager.setSheet(sheet, {cols: 3, width: 1000});
 	
 	
-	manager.drawSheet();
+	manager.preDrawSheet();
 	
 	manager.setColor(0, 0, 0, 'red')
 	manager.setColor(0, 0, 1, 'orange')
@@ -161,15 +183,15 @@ function testColor() {
 	manager.setColor(0, 0, 3, 'green')
 	manager.setColor(0, 0, 4, 'blue')
 	manager.setColor(0, 0, 5, 'purple')
+	manager.setColor(0, 0, 6, 'red')
 	
 	manager.renderSheet();
 	
 	console.log(manager)
 	
 }
-function testEvent() {
+function testEvent(canvas, container) {
 	var sheet = getSheet();
-	var canvas = createCanvas()
 	var manager = new SheetManager(canvas);
 	
 	manager.setSheet(sheet, {cols: 3, width: 1000});
@@ -182,7 +204,7 @@ function testEvent() {
 	
 	console.log(manager)
 	
-	var textBoard = $('<pre>').appendTo($(canvas).parent()).css('height', '400px');
+	var textBoard = $('<pre>').appendTo(container).css('height', '400px').css('text-align', 'left');
 	manager.on('mousemove', function (state) {
 		textBoard.text(JSON.stringify({
 			stave: state.stave.index,
@@ -237,9 +259,8 @@ function testEvent() {
 		manager.renderSheet();
 	})
 }
-function testMultiInsert() {
+function testMultiInsert(canvas, container) {
 	var sheet = getSheet();
-	var canvas = createCanvas()
 	var manager = new SheetManager(canvas);
 	
 	manager.setSheet(sheet, {cols: 3, width: 1000});
@@ -252,7 +273,7 @@ function testMultiInsert() {
 	
 	console.log(manager)
 	
-	var textBoard = $('<pre>').appendTo($(canvas).parent()).css('height', '400px');
+	var textBoard = $('<pre>').appendTo(container).css('height', '400px').css('text-align', 'left');
 	manager.on('mousemove', function (state) {
 		textBoard.text(JSON.stringify({
 			stave: state.stave.index,
@@ -283,8 +304,7 @@ function testMultiInsert() {
 			manager.insertNote(target, tuplet);
 			try {
 				manager.setSheet();
-				manager.preDrawSheet();
-				manager.renderSheet();
+				manager.drawSheet();
 			} catch (e) {
 				console.error(e);
 			}
@@ -315,9 +335,10 @@ function testMultiInsert() {
 		manager.renderSheet();
 	})
 }
-testSheet();
-testSerialize();
-testBoundingBox();
-testColor();
-testEvent();
-testMultiInsert();
+
+runTest('sheet drwing', testSheet);
+runTest('serialize sheet', testSerialize);
+runTest('get bounding box', testBoundingBox);
+runTest('colored note', testColor);
+runTest('insert single note', testEvent, "click anywhere on stave to insert a note");
+runTest('insert tuplet', testMultiInsert, "click anywhere on stave to insert a tuplet");

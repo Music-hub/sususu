@@ -1,4 +1,9 @@
+.wrap-out {
+  text-align: center;
+  border-bottom: 1px #777777 solid;
+}
 .wrap {
+  display: inline-block;
   position: relative;
 	outline: black solid;
 }
@@ -7,4 +12,9 @@
   position: absolute;
   border: 2px solid #4f4;
   box-sizing: border-box;
+}
+.wrap canvas {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
 }
