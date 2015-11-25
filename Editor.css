@@ -5,12 +5,14 @@ html ,body {
   margin:inherit;
   background:#ffffff;
   font-family: "calluna",Georgia,"Times New Roman",Times,serif;
+  
+  text-align:center;
 }
 
 #tool_bar{
     width:100%;
     position:fixed;
-
+    top: 47px;
 }
 
 #tool{
@@ -19,8 +21,8 @@ html ,body {
 }
 
 #edit {
-    height: 1000px;
-    margin: 210px;
+    display:inline-block;
+    margin: 210px 0px 30px 0px;
     background-color: #666666;
     background: #ffffff;
     box-shadow: 0 0 3px #333333;
