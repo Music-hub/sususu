@@ -1,7 +1,16 @@
 /* global Sheet, Channel, Measure, Note, NoteEffect, SheetManager */
 
+var count = 0;
 function runTest(name, test, discription) {
-  var wrapOut = $('<div>').addClass('wrap-out').appendTo('body');
+	var id = "test" + count;
+	count++;
+	$('<tr>').append(
+		$('<td>').append(
+			$('<a>').attr('href', '#' + id).text(name)
+		)
+	).appendTo('#test-list');
+	console.log($('#test-list'))
+  var wrapOut = $('<div>').addClass('wrap-out').appendTo('body').attr('id', id);
   var title = $('<h1>').text(name).appendTo(wrapOut);
   if (discription) {
   	var discription = $('<p>').text(discription).appendTo(wrapOut);
@@ -41,7 +50,9 @@ function getSheet () {
 				Note({ keys: ["bb/4"], duration: "16" }),
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
-			], 4, 4)
+			], 4, 4),
+			Measure([], 3, 4),
+			Measure([], 4, 4)
 		],"treble", "C"),
 		Channel([
 			Measure([
@@ -52,7 +63,9 @@ function getSheet () {
 				Note({ keys: ["bb/4"], duration: "16" }),
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
-			], 4, 4)
+			], 4, 4),
+			Measure([], 3, 4),
+			Measure([], 4, 4)
 		], "treble", "G"),
 		Channel([
 			Measure([
@@ -81,7 +94,7 @@ function getSheet () {
 				Note({ keys: ["bb/4"], duration: "16" }),
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
-			], 2, 4),
+			], 4, 4),
 			Measure([
 				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "5")]),
 				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "5")]),
@@ -90,7 +103,7 @@ function getSheet () {
 				Note({ keys: ["bb/4"], duration: "16" }),
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
-			], 2, 4)
+			], 4, 4)
 		], "treble", "E")
 	], 5);
 	return sheet;
@@ -335,10 +348,60 @@ function testMultiInsert(canvas, container) {
 		manager.renderSheet();
 	})
 }
+function testRemoveNote(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	
+	manager.setSheet(sheet, {cols: 3, width: 1000});
+	
+	
+	manager.preDrawSheet();
+	manager.renderSheet();
+	
+	manager.initEvent();
+	
+	console.log(manager)
+	
+	var textBoard = $('<pre>').appendTo(container).css('height', '400px').css('text-align', 'left');
+	manager.on('mousemove', function (state) {
+		textBoard.text(JSON.stringify({
+			stave: state.stave.index,
+			noteOn: state.note.on.index,
+			notePre: state.note.between.pre.index,
+			notePost: state.note.between.post.index
+		}, 0, 4))
+	})
+	manager.on('click_note', function (state) {
+		console.log('note', state.note.on.index);
+		manager.removeNote(state.note.on.index);
+		manager.setSheet();
+		manager.drawSheet();
+	})
+	manager.on('hover_note', function (state) {
+		console.log('note hover', state.stave.index);
+		manager.setColor(state.note.on.index, 'red');
+		manager.renderSheet();
+	})
+	manager.on('leave_note', function (state, oldState) {
+		console.log('note leave', oldState.stave.index);
+		manager.setColor(oldState.note.on.index, 'black');
+		manager.renderSheet();
+	})
+	manager.on('leave_note', function (state, oldState) {
+		console.log('note leave', oldState.stave.index);
+		manager.setColor(oldState.note.on.index, 'black');
+		manager.renderSheet();
+	})
+	manager.on('input_state_change', function(state, oldState) {
+		console.log('input_state_change', oldState.stave.index);
+		manager.renderSheet();
+	})
+}
 
-runTest('sheet drwing', testSheet);
+runTest('sheet draw', testSheet);
 runTest('serialize sheet', testSerialize);
 runTest('get bounding box', testBoundingBox);
 runTest('colored note', testColor);
 runTest('insert single note', testEvent, "click anywhere on stave to insert a note");
 runTest('insert tuplet', testMultiInsert, "click anywhere on stave to insert a tuplet");
+runTest('remove note', testRemoveNote, "click on a note to remove it");
