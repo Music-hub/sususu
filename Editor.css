@@ -7,20 +7,16 @@ html ,body {
   font-family: "calluna",Georgia,"Times New Roman",Times,serif;
 }
 
-#tool_bar{
-    width:100%;
+#toolbar{
+    margin-top: 50px;
     position:fixed;
-
-}
-
-#tool{
-   
 
 }
 
 #edit {
     height: 1000px;
-    margin: 210px;
+    margin: 50px;
+    margin-left:300px;
     background-color: #666666;
     background: #ffffff;
     box-shadow: 0 0 3px #333333;
@@ -29,6 +25,12 @@ html ,body {
 .write {
     margin: 20px;
 } 
+
+.column {
+
+    margin: 10px;
+
+}
 
 .footer {
   text-align: center;
