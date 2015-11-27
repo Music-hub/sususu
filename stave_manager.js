@@ -9,6 +9,18 @@
  * effect : {id: id, type: String} # id is to used determine if effect should be group on multi note (eg. tuplet)
  */
 
+var inherits = function(ctor, superCtor) {
+  ctor.super_ = superCtor;
+  ctor.prototype = Object.create(superCtor.prototype, {
+    constructor: {
+      value: ctor,
+      enumerable: false,
+      writable: true,
+      configurable: true
+    }
+  });
+};
+
 function Sheet(tracks, measureCount) {
 	if (!(this instanceof Sheet)) {
 		return new Sheet(tracks, measureCount);
@@ -27,6 +39,13 @@ Sheet.prototype.getChannelCount = function getChannelCount() {
 Sheet.prototype.getMeasureCount = function getMeasureCount() {
 	return Math.max.apply(null, this.tracks.map(function (track) {return track.measures.length}));
 };
+Sheet.prototype.setMeasureLength = function setMeasureLength(measureCount) {
+	if (measureCount != null) {
+		this.tracks.forEach(function (track) {
+			track.fillMeasure(measureCount);
+		})
+	}
+};
 Sheet.prototype.toObject = function () {
 	return {
 		info: this.info,
@@ -40,16 +59,17 @@ Sheet.fromObject = function (obj) {
 	return sheet;
 }
 
-function Channel(measures, clef,  keySignature) {
+function Channel(measures, clef,  keySignature, effects) {
 	if (!(this instanceof Channel)) {
-		return new Channel (measures, clef, keySignature);
+		return new Channel (measures, clef, keySignature, effects);
 	}
 	this.info = {
 		keySignature : keySignature || "C",
 		/*
 		 * clef : "treble" | "bass" |....
 		 */
-		clef : clef || "treble"
+		clef : clef || "treble",
+		effects: effects || [],
 	}
 	this.measures = measures || [];
 }
@@ -58,6 +78,9 @@ Channel.prototype.fillMeasure = function fillMeasure (num) {
 		this.measures.push(
 			this.measures[this.measures.length - 1].createNewMeasure()
 		)
+	}
+	if (this.measures.length > num) {
+		this.measures = this.measures.slice(0, num - 1);
 	}
 };
 
@@ -74,16 +97,17 @@ Channel.fromObject = function (obj) {
 	return channel;
 }
 
-function Measure(notes, numBeats, beatValue, begBarType, endBarType, chord) {
+function Measure(notes, numBeats, beatValue, begBarType, endBarType, chord, effects) {
 	if (!(this instanceof Measure)) {
-		return new Measure (notes, numBeats, beatValue, begBarType, endBarType, chord);
+		return new Measure (notes, numBeats, beatValue, begBarType, endBarType, chord, effects);
 	}
 	this.info = {
 		begBarType : begBarType || null,
 		endBarType : endBarType || null,
 		numBeats : numBeats || 4,
 		beatValue : beatValue || 4,
-		chord : chord || null
+		chord : chord || null,
+		effects : effects || []
 	};
 	this.notes = notes || [];
 }
@@ -135,30 +159,142 @@ Note.fromObject = function (obj) {
 }
 
 
-function NoteEffect(type, id, data) {
-	if (!(this instanceof NoteEffect)) {
-		return new NoteEffect (type, id, data);
+function Effect(type, id, data) {
+	if (!(this instanceof Effect)) {
+		return new Effect (type, id, data);
 	}
 	this.id = id;
 	this.type = type;
 	this.data = data;
 }
-NoteEffect.processEffect = function processEffect(effectMap) {
-	var id, effectSet, notes, drawables = [];
-	if (effectMap.tuplet) {
-		for (id in effectMap.tuplet) {
-			if (effectMap.tuplet.hasOwnProperty(id)) {
-				
-				effectSet = effectMap.tuplet[id];
-				notes = effectSet.notes;
-				if (notes.length < 2) continue;
-				var tuplet = new Vex.Flow.Tuplet(notes);
-				drawables.push(tuplet);
+
+function EffectProcessor () {
+	EventEmitter.call(this);
+}
+inherits(EffectProcessor, EventEmitter);
+
+/*
+ * SheetManager sheetManager: instance  of the manager handling the sheet
+ * Sheet sheet: the sheet instance
+ * effectSet {
+ *   type,
+ *   id,
+ *   indexes,
+ *   items,
+ *   datas
+ * }[]
+ * String type: effect type
+ * String if: id of effect set
+ * Number[][] indexes: indexes of item needed to be processed
+ * Object[] items: items need to be processed, ie: track, stave, measure
+ * Any[] datas: contain data associate with effect
+ */
+
+// called before `voice` got generated
+EffectProcessor.prototype.preFormat = function processEffect(sheetManager, sheet, effectSets) {
+	var self = this;
+	effectSets.forEach(function (set) {
+		self.emit('preformat', sheetManager, sheet, set.type, set.id, set.indexes, set.items, set.datas);
+	})
+}
+// same arguments, but got called after the notes and layout was formated
+EffectProcessor.prototype.postFormat = function processEffect(sheetManager, sheet, effectSets) {
+	var self = this;
+	effectSets.forEach(function (set) {
+		self.emit('postformat', sheetManager, sheet, set.type, set.id, set.indexes, set.items, set.datas);
+	})
+}
+EffectProcessor.prototype.addEffectSets = function addEffectSet(sets) {
+	var self = this;
+	if (!Array.isArray(sets)) sets = [sets];
+	sets.forEach(function (set) {
+		if (set.preformat) self.on('preformat', set.preformat)
+		if (set.postformat) self.on('postformat', set.postformat)
+	})
+}
+
+EffectProcessor.noteEffectSets = [
+// inject handler for tuplet
+{
+	preformat: function (sheetManager, sheet, type, id, indexes, items, datas) {
+		if (type !== "tuplet") return;
+		if (items.length < 2) return;
+		var tuplet = new Vex.Flow.Tuplet(items);
+		sheetManager.noteDrawables.push(tuplet);
+	}
+},
+// inject handler for tie
+{
+	preformat:  function (sheetManager, sheet, type, id, indexes, items, datas) {
+		if (type !== "tie") return;
+		if (items.length !== 2) return;
+		if (!datas[0] || !datas[1]) return;
+		
+	  var tie = new Vex.Flow.StaveTie({
+	    first_note: items[0],
+	    last_note: items[1],
+	    first_indices: datas[0],
+	    last_indices: datas[1]
+	  });
+	  
+		sheetManager.noteDrawables.push(tie);
+	}
+},
+// inject handler for colored note
+{
+	postformat: function (sheetManager, sheet, type, id, indexes, items, datas) {
+		if (type !== "style") return;
+		for (var i = 0; i < datas.length; i++) {
+			if (datas[i] == null || "string" !== typeof datas[i]) return;
+		}
+	  indexes.forEach(function (index, order) {
+			sheetManager.setColor(index, datas[order]);
+	  })
+	}
+}
+]
+EffectProcessor.trackEffectSets = [
+	// handler for stave connectors
+	{
+		preformat: function (sheetManager, sheet, type, id, indexes, items, datas) {
+			if (type !== "stave_connector") return;
+			if (items.length < 1) return;
+			var i, firstStave, secondStave;
+			var cols = sheetManager.staveTable.cols;
+			
+			var firstTrack = items[0];
+			var secondTrack = items[items.length - 1];
+			var info = datas[0];
+			if (!info.onEnd) {
+				for (i = 0; i < firstTrack.length; i += cols) {
+					firstStave = firstTrack[i];
+					secondStave = secondTrack[i];
+		      var connector = new Vex.Flow.StaveConnector(firstStave, secondStave);
+		      connector.setType(Vex.Flow.StaveConnector.type[info.type || "SINGLE"]);
+		      if (info.text && i === 0) {
+		      	connector.setText(info.text);
+		      }
+					sheetManager.staveDrawables.push(connector)
+				}
 			}
 		}
 	}
-	return drawables;
-};
+];
+EffectProcessor.measureEffectSets = [
+	// handler for measure text
+	{
+		preformat: function (sheetManager, sheet, type, id, indexes, items, datas) {
+			console.log("test", arguments)
+			if (type !== "text") return;
+			
+			items.forEach(function (stave, index) {
+				var info = datas[index];
+				// nothing to draw...
+				if (!info || !info.text) return;
+      	stave.setText(info.text, Vex.Flow.Modifier.Position[info.position || "ABOVE"], info.options || {});
+			})
+		}
+	}];
 
 function MeasureManager (tracks, measures, cols) {
 	var i;
@@ -179,12 +315,33 @@ MeasureManager.prototype.setColume = function setColume(cols) {
 	this.cols = cols;
 };
 MeasureManager.prototype.staveByTrack =	 function staveByTrack(trackNum, measureNum, stave) {
-	try  {
-		if (!stave) return this.data[trackNum][measureNum]
-		return this.data[trackNum][measureNum] = stave;
-	} catch (e) {
-		console.error(e);
-		throw e;
+	var i, results = [];
+	if (('number' === typeof trackNum) && ('number' === typeof measureNum)) {
+		try  {
+			if (!stave) return this.data[trackNum][measureNum]
+			return this.data[trackNum][measureNum] = stave;
+		} catch (e) {
+			console.error(e);
+			throw e;
+		}
+	} else if (trackNum === "*" || measureNum === "*") {
+		try {
+			if (measureNum === "*") {
+				for (i = 0; i < this.measures; i++) {
+					results.push(this.staveByTrack(trackNum, i));
+				}
+				return results;
+			}
+			if (trackNum === "*") {
+				for (i = 0; i < this.tracks; i++) {
+					results.push(this.staveByTrack(i, measureNum));
+				}
+				return results;
+			}
+		} catch (e) {
+			console.error(e);
+			throw e;
+		}
 	}
 };
 MeasureManager.prototype.staveByColume = function staveByColume(col, row, stave) {
@@ -200,6 +357,7 @@ MeasureManager.prototype.staveByColume = function staveByColume(col, row, stave)
 		throw e;
 	}
 };
+
 MeasureManager.prototype.toTrack = function (col, row) {
 	var trackNum = row % this.tracks;
 	var measureNum = ((row / this.tracks)|0) * this.cols + col;
@@ -224,16 +382,15 @@ MeasureManager.prototype.allStaves = function allMeasures() {
 	return measures;
 }
 
-var inherits = function(ctor, superCtor) {
-  ctor.super_ = superCtor;
-  ctor.prototype = Object.create(superCtor.prototype, {
-    constructor: {
-      value: ctor,
-      enumerable: false,
-      writable: true,
-      configurable: true
-    }
-  });
+MeasureManager.prototype.forEachTrack = function forEachTrack(cb) {
+	var i, j, index, item;
+	for (i = 0; i < this.tracks; i++) {
+		for (j = 0; j < this.tracks; j++) {
+			index = [i, j];
+			item = this.staveByTrack(i, j);
+			cb.call(item, item, index);
+		}
+	}
 };
 
 function SheetManager (canvas, options)
@@ -256,12 +413,17 @@ function SheetManager (canvas, options)
 		width : 700,
 		lineHeight : 100,
 		cols : 4,
-		padding : 10
+		paddingLeft : 20,
+		paddingRight : 20,
+		paddingTop : 20,
+		paddingBottom : 20,
+		paddingFirstLine : 20,
+		extraHeadStaveWidth: 40
 	}
 	this.init(options);
 }
-
 inherits(SheetManager, EventEmitter);
+
 
 SheetManager.prototype.mergeOptions = function mergeOptions(obj1,obj2){
 	var obj3 = {};
@@ -272,14 +434,39 @@ SheetManager.prototype.mergeOptions = function mergeOptions(obj1,obj2){
 
 SheetManager.prototype.init = function init(options) {
 	options = options || {};
+	
+	if (options.padding) {
+		if (!options.paddingRight) options.paddingRight = options.padding;
+		if (!options.paddingBottom) options.paddingBottom = options.padding;
+		if (!options.paddingTop) options.paddingTop = options.padding;
+		if (!options.paddingLeft) options.paddingLeft = options.padding;
+		if (!options.paddingFirstLine) options.paddingFirstLine = options.paddingLeft;
+	}
+	
 	this.options = this.options || {};
 	this.options = this.mergeOptions(this._optionsDefault, this.options);
 	this.options = this.mergeOptions(this.options, options);
 	
-	var height = this.data.rows * this.options.lineHeight + this.options.padding * 2;
-	var width = this.options.width + this.options.padding * 2;
+	if (!this.options.effectProcessor) {
+		this.options.effectProcessor = {};
+		if (!this.options.effectProcessor.note) {
+			this.options.effectProcessor.note = new EffectProcessor()
+			this.options.effectProcessor.note.addEffectSets(EffectProcessor.noteEffectSets);
+		}
+		if (!this.options.effectProcessor.track) {
+			this.options.effectProcessor.track = new EffectProcessor()
+			this.options.effectProcessor.track.addEffectSets(EffectProcessor.trackEffectSets);
+		}
+		if (!this.options.effectProcessor.measure) {
+			this.options.effectProcessor.measure = new EffectProcessor()
+			this.options.effectProcessor.measure.addEffectSets(EffectProcessor.measureEffectSets);
+		}
+	}
 	
-	this.data.staveWidth = Math.floor(this.options.width / this.options.cols);
+	var height = this.data.rows * this.options.lineHeight + this.options.paddingBottom + this.options.paddingTop;
+	var width = this.options.width + this.options.paddingRight + this.options.paddingLeft;
+	
+	this.data.staveWidth = Math.floor((this.options.width - this.options.extraHeadStaveWidth) / this.options.cols);
 	
 	// drop current contents
 	this.canvas.height = 1;
@@ -324,11 +511,13 @@ SheetManager.prototype.setSheet = function setSheet(sheet, options) {
 // format the sheet init all vex notes and stave
 SheetManager.prototype.preDrawSheet = function preDrawSheet() {
 	this.createStave();
+	this.addStaveTrackEffect();
+	this.addStaveMeasureEffect();
 	this.addClef();
 	this.addKeySignature();
 	this.addTimeSignature();
-	this.addStaveEffect();
 	this.addConnector();
+	this.postStaveFormat();
 
 	this.createNote();
 	this.addNoteEffect();
@@ -391,21 +580,56 @@ SheetManager.prototype.createNote = function createNote() {
 	}
 	//console.log(this.noteTable);
 }
+
+// collect the note as a set, save it, call effect processor to process effect
 SheetManager.prototype.addNoteEffect = function addNoteEffect() {
-	var allEffect = {};
-	this.noteTable.allStaves().reduce(function (current, self) {
-		return current.concat(self);
-	}, []).forEach(function (note) {
-		note.originalData.info.effects.forEach(function (effect) {
-			allEffect[effect.type] = allEffect[effect.type] || {};
-			allEffect[effect.type][effect.id] = allEffect[effect.type][effect.id] || {notes: [], datas: []};
-			allEffect[effect.type][effect.id].notes.push(note)
-			if (effect.data) {
-				allEffect[effect.type][effect.id].datas.push(effect.data);
-			};
-		})
-	})
-	this.noteDrawables = this.noteDrawables.concat(NoteEffect.processEffect(allEffect));
+	var i, j, k, notes, note, index, effect,
+	    self = this,
+	    tracks = this.noteTable.tracks,
+	    measures = this.noteTable.measures,
+	    effectMap = {}, 
+	    effectList = [];
+	
+	for (i = 0; i < tracks; i++) {
+		for (j = 0; j < measures; j++) {
+			notes = this.sheet.tracks[i].measures[j].notes;
+			for (k = 0; k < notes.length; k++) {
+				index = [i, j, k];
+				note = notes[k];
+				// console.log(note, index);
+				note.info.effects.forEach(function (effect) {
+					if (!effect.id) {
+						effectList.push({
+							type: effect.type,
+							id: null,
+							datas: [effect.data],
+							indexes: [index],
+							items: [self.noteTable.staveByTrack(i, j)[k]]
+						})
+						return;
+					}
+					if (!effectMap[effect.type + '-' + effect.id]) {
+						effect = {
+							type: effect.type,
+							id: effect.id,
+							datas: [effect.data],
+							indexes: [index],
+							items: [self.noteTable.staveByTrack(i, j)[k]]
+						};
+						effectMap[effect.type + '-' + effect.id] = effect;
+						effectList.push(effect);
+					} else {
+						effectMap[effect.type + '-' + effect.id].datas.push(effect.data)
+						effectMap[effect.type + '-' + effect.id].indexes.push(index)
+						effectMap[effect.type + '-' + effect.id].items.push(self.noteTable.staveByTrack(i, j)[k])
+					}
+				})
+			}
+		}
+	}
+	console.log(effectMap, effectList)
+	this.noteEffectList = effectList;
+	this.options.effectProcessor.note.preFormat(this, this.sheet, effectList);
 }
 SheetManager.prototype.createVoice = function createVoice() {
 	var i, j, notes, voice, measure,
@@ -533,7 +757,9 @@ SheetManager.prototype.postNoteFormat = function postFormat() {
 			drawable.postFormat();
 		}
 	})
+	this.options.effectProcessor.note.postFormat(this, this.sheet, this.noteEffectList);
 }
+
 SheetManager.prototype.drawNote = function drawNote() {
 	var i, j, voice, stave,
 	    self = this,
@@ -567,10 +793,27 @@ SheetManager.prototype.createStave = function createStave() {
 		for (j = 0; j < measures; j++) {
 			col = this.staveTable.toColume(i, j).col;
 			row = this.staveTable.toColume(i, j).row;
-			
+			if (j === 0) {
+				stave = new Vex.Flow.Stave(
+					this.options.paddingFirstLine, 
+					this.options.paddingTop + row * this.options.lineHeight, 
+					this.data.staveWidth - (this.options.paddingFirstLine - this.options.paddingLeft) + this.options.extraHeadStaveWidth
+				);
+				this.staveTable.staveByTrack(i, j, stave);
+				continue;
+			}
+			if (col === 0) {
+				stave = new Vex.Flow.Stave(
+					this.options.paddingLeft + col * this.data.staveWidth, 
+					this.options.paddingTop + row * this.options.lineHeight, 
+					this.data.staveWidth + this.options.extraHeadStaveWidth
+				);
+				this.staveTable.staveByTrack(i, j, stave);
+				continue;
+			}
 			stave = new Vex.Flow.Stave(
-				this.options.padding + col * this.data.staveWidth, 
-				this.options.padding + row * this.options.lineHeight, 
+				this.options.paddingLeft + col * this.data.staveWidth + this.options.extraHeadStaveWidth, 
+				this.options.paddingTop + row * this.options.lineHeight, 
 				this.data.staveWidth
 			);
 			
@@ -578,6 +821,78 @@ SheetManager.prototype.createStave = function createStave() {
 		}
 	}
 	
+}
+SheetManager.prototype.addStaveTrackEffect = function addStaveTrackEffect() {
+	var i, effectMap = {}, effectList = [], track, index,
+	    self = this,
+	    tracks = this.staveTable.tracks;
+	for (i = 0; i < tracks; i++) {
+		index = [i];
+		track = this.sheet.tracks[i];
+		track.info.effects.forEach(function (effect) {
+			if (!effect.id) {
+				effectList.push({
+					type: effect.type,
+					id: null,
+					datas: [effect.data],
+					indexes: [index],
+					items: [self.staveTable.staveByTrack(i, '*')]
+				});
+				return;
+			}
+			if (!effectMap[effect.type + '-' + effect.id]) {
+				effectMap[effect.type + '-' + effect.id] = {
+					type: effect.type,
+					id: null,
+					datas: [effect.data],
+					indexes: [index],
+					items: [self.staveTable.staveByTrack(i, '*')]
+				};
+				effectList.push(effectMap[effect.type + '-' + effect.id]);
+			} else {
+				effectMap[effect.type + '-' + effect.id].datas.push(effect.data);
+				effectMap[effect.type + '-' + effect.id].indexes.push(index);
+				effectMap[effect.type + '-' + effect.id].items.push(self.staveTable.staveByTrack(i, '*'));
+			}
+		})
+	}
+	this.trackEffectList = effectList;
+	this.options.effectProcessor.track.preFormat(this, this.sheet, effectList);
+}
+SheetManager.prototype.addStaveMeasureEffect = function addStaveMeasureEffect() {
+	var effectMap = {}, effectList = [],
+	    self = this;
+	this.staveTable.forEachTrack(function (measureStave, index) {
+		var measure = self.sheet.tracks[index[0]].measures[index[1]];
+		measure.info.effects.forEach(function (effect) {
+			if (!effect.id) {
+				effectList.push({
+					type: effect.type,
+					id: null,
+					datas: [effect.data],
+					indexes: [index],
+					items: [measureStave]
+				});
+				return;
+			}
+			if (!effectMap[effect.type + '-' + effect.id]) {
+				effectMap[effect.type + '-' + effect.id] = {
+					type: effect.type,
+					id: null,
+					datas: [effect.data],
+					indexes: [index],
+					items: [measureStave]
+				};
+				effectList.push(effectMap[effect.type + '-' + effect.id]);
+			} else {
+				effectMap[effect.type + '-' + effect.id].datas.push(effect.data);
+				effectMap[effect.type + '-' + effect.id].indexes.push(index);
+				effectMap[effect.type + '-' + effect.id].items.push(measureStave);
+			}
+		})
+	})
+	this.measureEffectList = effectList;
+	this.options.effectProcessor.measure.preFormat(this, this.sheet, effectList);
 }
 SheetManager.prototype.addClef = function addClef() {
 	var i, stave, track,
@@ -619,9 +934,6 @@ SheetManager.prototype.addTimeSignature = function addTimeSignature() {
 		}
 	}
 }
-SheetManager.prototype.addStaveEffect = function addStaveEffect() {
-	// TODO
-}
 SheetManager.prototype.addConnector = function addConnector() {
 	var i, j, stave, nextStave, connector, connector2, 
 	    tracks = this.staveTable.tracks,
@@ -646,6 +958,11 @@ SheetManager.prototype.addConnector = function addConnector() {
 		}
 	}
 }
+SheetManager.prototype.postStaveFormat = function postStaveFormat() {
+	this.options.effectProcessor.measure.postFormat(this, this.sheet, this.measureEffectList);
+	this.options.effectProcessor.track.postFormat(this, this.sheet, this.trackEffectList);
+}
+
 SheetManager.prototype.drawStave = function drawStave() {
 	var self = this;
 	this.staveTable.allStaves().forEach(function (stave) {
