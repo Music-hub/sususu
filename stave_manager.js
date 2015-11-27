@@ -56,7 +56,8 @@ Sheet.prototype.toObject = function () {
 Sheet.fromObject = function (obj) {
 	var sheet;
 	sheet = new Sheet(obj.tracks.map(function (track) {return Channel.fromObject(track)}));
-	sheet.info = obj.info;
+	sheet.info = obj.info || {};
+	sheet.info.effects = sheet.info.effects || [];
 	return sheet;
 }
 
@@ -95,7 +96,8 @@ Channel.prototype.toObject = function () {
 Channel.fromObject = function (obj) {
 	var channel;
 	channel = new Channel(obj.measures.map(function (measure) {return Measure.fromObject(measure)}));
-	channel.info = obj.info;
+	channel.info = obj.info || {};
+	channel.info.effects = channel.info.effects || [];
 	return channel;
 }
 
@@ -133,7 +135,8 @@ Measure.prototype.toObject = function () {
 Measure.fromObject = function (obj) {
 	var measure;
 	measure = new Measure(obj.notes.map(function (note) {return Note.fromObject(note)}));
-	measure.info = obj.info;
+	measure.info = obj.info || {};
+	measure.info.effects = measure.info.effects || [];
 	return measure;
 }
 
@@ -158,7 +161,8 @@ Note.prototype.toObject = function () {
 }
 Note.fromObject = function (obj) {
 	var note = new Note(obj.struct);
-	note.info = obj.info;
+	note.info = obj.info || {};
+	note.info.effects = note.info.effects || [];
 	return note;
 }
 
