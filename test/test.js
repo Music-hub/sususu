@@ -17,6 +17,9 @@ function runTest(name, test, discription) {
 	var container = $('<div>').addClass('wrap').appendTo(wrapOut);
 	var canvas = $("<canvas>").appendTo(container)[0];
 	var success = true;
+	
+	var start = Date.now();
+	
 	try {
     test(canvas, container);
 	} catch (e) {
@@ -33,7 +36,7 @@ function runTest(name, test, discription) {
 	}
 	if (success) {
 	  wrapOut.append(
-	    $('<p>').text('done - without error')
+	    $('<p>').text('done - without error - ' + (Date.now() - start) + "ms")
 	  )
 	}
 }
@@ -55,7 +58,10 @@ function getSheet () {
 			]),
 			Measure([], 3, 4),
 			Measure([], 4, 4)
-		],"treble", "C", [Effect('stave_connector', "2", {type: "BRACKET", text: "violin", onEnd: false})]),
+		],"treble", "C", [
+			Effect('stave_connector', "2", {type: "BRACKET", text: "violin", onEnd: false}),
+			Effect('stave_connector', "3", {type: "BOLD_DOUBLE_RIGHT", onEnd: true})
+		]),
 		Channel([
 			Measure([
 				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "2")]),
@@ -71,7 +77,9 @@ function getSheet () {
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" }, [Effect('tie', "3", [0, 1])])
 			], 3, 4),
 			Measure([], 4, 4)
-		], "treble", "G", [Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false})]),
+		], "treble", "G", [
+			Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false})
+		]),
 		Channel([
 			Measure([
 				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "3")]),
@@ -109,7 +117,10 @@ function getSheet () {
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
 			], 4, 4)
-		], "treble", "E", [Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false})])
+		], "treble", "E", [
+			Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false}),
+			Effect('stave_connector', "3", {type: "BOLD_DOUBLE_RIGHT", onEnd: true})
+		])
 	], 5);
 	return sheet;
 }
@@ -128,7 +139,7 @@ function testSheet2 (canvas, container) {
 	sheet.setMeasureLength(40);
 	var manager = new SheetManager(canvas);
 	
-	manager.setSheet(sheet, {cols: 4, width: 800, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 100});
+	manager.setSheet(sheet, {cols: 4, width: 800, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 100,	extraHeadStaveWidth: 120});
 	
 	manager.drawSheet();
 	console.log(manager)
@@ -158,6 +169,9 @@ function testSerialize(canvas, container) {
 	manager.setSheet(sheet, {cols: 3, width: 1000});
 	
 	manager.drawSheet();
+	var textBoard = $('<pre>').appendTo(container).css('height', '400px').css('text-align', 'left');
+	textBoard.text(JSON.stringify(sheet, 0, 4));
+	
 	console.log(manager)
 }
 function testBoundingBox(canvas, container) {
