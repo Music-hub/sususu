@@ -32,3 +32,17 @@ $(document).ready(function() {
 });
 
 
+
+function handler(){
+
+    $('.ui.sidebar').sidebar({ overlay: false }).sidebar('toggle');
+
+}
+
+$('.accordion')
+  .accordion({
+    selector: {
+      trigger: '.title .icon'
+    }
+  })
+;
