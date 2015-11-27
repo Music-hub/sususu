@@ -21,6 +21,7 @@ var inherits = function(ctor, superCtor) {
   });
 };
 
+// represent a music sheet
 function Sheet(tracks, measureCount) {
 	if (!(this instanceof Sheet)) {
 		return new Sheet(tracks, measureCount);
@@ -59,6 +60,7 @@ Sheet.fromObject = function (obj) {
 	return sheet;
 }
 
+// represent a single track in a sheet, a sheet can have more than one sheet
 function Channel(measures, clef,  keySignature, effects) {
 	if (!(this instanceof Channel)) {
 		return new Channel (measures, clef, keySignature, effects);
@@ -97,6 +99,7 @@ Channel.fromObject = function (obj) {
 	return channel;
 }
 
+// represent a single measure in a track, a track can have more than one measure
 function Measure(notes, numBeats, beatValue, begBarType, endBarType, chord, effects) {
 	if (!(this instanceof Measure)) {
 		return new Measure (notes, numBeats, beatValue, begBarType, endBarType, chord, effects);
@@ -134,6 +137,7 @@ Measure.fromObject = function (obj) {
 	return measure;
 }
 
+// represent a single note in a measure, a measure can have more than one note
 function Note(struct, effects) {
 	if (!(this instanceof Note)) {
 		return new Note (struct, effects);
@@ -158,7 +162,7 @@ Note.fromObject = function (obj) {
 	return note;
 }
 
-
+// a convenient class to generate a effect stature of either sheet, track, measure, note
 function Effect(type, id, data) {
 	if (!(this instanceof Effect)) {
 		return new Effect (type, id, data);
@@ -168,6 +172,7 @@ function Effect(type, id, data) {
 	this.data = data;
 }
 
+// a class to handle effect of some item, ex: text of stave, stave connectors and tuplets.
 function EffectProcessor () {
 	EventEmitter.call(this);
 }
@@ -213,6 +218,7 @@ EffectProcessor.prototype.addEffectSets = function addEffectSet(sets) {
 	})
 }
 
+// some defult sets for effect handling
 EffectProcessor.noteEffectSets = [
 // inject handler for tuplet
 {
@@ -265,17 +271,20 @@ EffectProcessor.trackEffectSets = [
 			var firstTrack = items[0];
 			var secondTrack = items[items.length - 1];
 			var info = datas[0];
-			if (!info.onEnd) {
-				for (i = 0; i < firstTrack.length; i += cols) {
+			for (i = 0; i < firstTrack.length; i += cols) {
+				if (!info.onEnd) {
 					firstStave = firstTrack[i];
 					secondStave = secondTrack[i];
-		      var connector = new Vex.Flow.StaveConnector(firstStave, secondStave);
-		      connector.setType(Vex.Flow.StaveConnector.type[info.type || "SINGLE"]);
-		      if (info.text && i === 0) {
-		      	connector.setText(info.text);
-		      }
-					sheetManager.staveDrawables.push(connector)
+				} else {
+					firstStave = firstTrack[i + cols - 1 < firstTrack.length ? i + cols - 1 : firstTrack.length - 1];
+					secondStave = secondTrack[i + cols - 1 < firstTrack.length ? i + cols - 1 : firstTrack.length - 1];
 				}
+	      var connector = new Vex.Flow.StaveConnector(firstStave, secondStave);
+	      connector.setType(Vex.Flow.StaveConnector.type[info.type || "SINGLE"]);
+	      if (info.text && i === 0) {
+	      	connector.setText(info.text);
+	      }
+				sheetManager.staveDrawables.push(connector)
 			}
 		}
 	}
@@ -296,6 +305,7 @@ EffectProcessor.measureEffectSets = [
 		}
 	}];
 
+// a data structure that implements both track/measure and colume/row based getter and setter of music sheets.
 function MeasureManager (tracks, measures, cols) {
 	var i;
 	this.data = [];
@@ -393,6 +403,7 @@ MeasureManager.prototype.forEachTrack = function forEachTrack(cb) {
 	}
 };
 
+// main class for handle all sheet drawing and manipulating methods
 function SheetManager (canvas, options)
 {
 	EventEmitter.call(this);
@@ -432,6 +443,7 @@ SheetManager.prototype.mergeOptions = function mergeOptions(obj1,obj2){
 	return obj3;
 }
 
+// init some empty data table, reset everything to initial state, merge options to defult options.
 SheetManager.prototype.init = function init(options) {
 	options = options || {};
 	
@@ -491,7 +503,7 @@ SheetManager.prototype.init = function init(options) {
 	this.firstDraw = true;
 }
 
-
+// change either the sheet or the options, or call it with empty argument to reinit the layout after sheet being modified
 SheetManager.prototype.setSheet = function setSheet(sheet, options) {
 	this.sheet = sheet || this.sheet;
 	
@@ -508,7 +520,7 @@ SheetManager.prototype.setSheet = function setSheet(sheet, options) {
 	this.staveTable = new MeasureManager (tracks, measures, this.options.cols);
 }
 
-// format the sheet init all vex notes and stave
+// format the sheet and init all vex notes and stave
 SheetManager.prototype.preDrawSheet = function preDrawSheet() {
 	this.createStave();
 	this.addStaveTrackEffect();
@@ -530,10 +542,12 @@ SheetManager.prototype.preDrawSheet = function preDrawSheet() {
 	
 }
 
+// clear the canvas
 SheetManager.prototype._clearCanvas = function _clearCanvas() {
 	this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 }
-// draw the sheet
+
+// draw all items of the sheet
 SheetManager.prototype.renderSheet = function renderSheet() {
 	this._clearCanvas();
 	
@@ -547,12 +561,13 @@ SheetManager.prototype.renderSheet = function renderSheet() {
 	}
 }
 
-
+// format and draw the sheet, actully combination of `preDrawSheet`, `_clearCanvas`, `renderSheet`
 SheetManager.prototype.drawSheet = function drawSheet() {
 	this.preDrawSheet();
 	this.renderSheet();
 }
 
+// create vexflow notes based on the note data from the sheet
 SheetManager.prototype.createNote = function createNote() {
 	var i, j, k, track, measure, noteStruct, notes,
 	    tracks = this.voiceTable.tracks,
@@ -631,6 +646,7 @@ SheetManager.prototype.addNoteEffect = function addNoteEffect() {
 	this.noteEffectList = effectList;
 	this.options.effectProcessor.note.preFormat(this, this.sheet, effectList);
 }
+// create vexflow voice based on the vexflow notes
 SheetManager.prototype.createVoice = function createVoice() {
 	var i, j, notes, voice, measure,
 	    tracks = this.noteTable.tracks,
@@ -654,6 +670,7 @@ SheetManager.prototype.createVoice = function createVoice() {
 	//console.log(this.voiceTable);
 }
 
+// add dot based on length property
 SheetManager.prototype.addDot = function addDot() {
 	this.noteTable.allStaves().reduce(function (all, c) {
 		return all.concat(c)
@@ -664,6 +681,7 @@ SheetManager.prototype.addDot = function addDot() {
 		}
 	})
 }
+// add accidentals based on sounf modifiers
 SheetManager.prototype.addAccidental = function addAccidental() {
 	var i, j, voice, track,
 	    tracks = this.voiceTable.tracks, 
@@ -677,6 +695,7 @@ SheetManager.prototype.addAccidental = function addAccidental() {
 		}
 	}
 }
+// add beams based on notes
 SheetManager.prototype.addBeam = function addBeam() {
 	var self = this;
 	this.voiceTable.allStaves().forEach(function (voice) {
@@ -685,6 +704,7 @@ SheetManager.prototype.addBeam = function addBeam() {
 	})
 	// 
 }
+// format the notes, make the notes layout be able to accessed from program
 SheetManager.prototype.alignNote = function alignNote() {
 	var i, j, voices, staves, minX, width,
 	    measures = this.voiceTable.measures,
@@ -760,6 +780,7 @@ SheetManager.prototype.postNoteFormat = function postFormat() {
 	this.options.effectProcessor.note.postFormat(this, this.sheet, this.noteEffectList);
 }
 
+// draw the note parts
 SheetManager.prototype.drawNote = function drawNote() {
 	var i, j, voice, stave,
 	    self = this,
@@ -784,6 +805,7 @@ SheetManager.prototype.drawNote = function drawNote() {
 	})
 }
 
+// create vexflow stave based on the measure data from the sheet
 SheetManager.prototype.createStave = function createStave() {
 	var i, j, stave, col, row,
 	    tracks = this.sheet.getChannelCount(),
@@ -822,6 +844,7 @@ SheetManager.prototype.createStave = function createStave() {
 	}
 	
 }
+// collect the track with same effect as a set, save it, call effect processor to process effect
 SheetManager.prototype.addStaveTrackEffect = function addStaveTrackEffect() {
 	var i, effectMap = {}, effectList = [], track, index,
 	    self = this,
@@ -859,6 +882,7 @@ SheetManager.prototype.addStaveTrackEffect = function addStaveTrackEffect() {
 	this.trackEffectList = effectList;
 	this.options.effectProcessor.track.preFormat(this, this.sheet, effectList);
 }
+// collect the measure with same effect as a set, save it, call effect processor to process effect
 SheetManager.prototype.addStaveMeasureEffect = function addStaveMeasureEffect() {
 	var effectMap = {}, effectList = [],
 	    self = this;
@@ -894,6 +918,7 @@ SheetManager.prototype.addStaveMeasureEffect = function addStaveMeasureEffect() 
 	this.measureEffectList = effectList;
 	this.options.effectProcessor.measure.preFormat(this, this.sheet, effectList);
 }
+// add clefs to every staves at first col
 SheetManager.prototype.addClef = function addClef() {
 	var i, stave, track,
 	    rows = this.staveTable.rows;
@@ -904,6 +929,7 @@ SheetManager.prototype.addClef = function addClef() {
 		stave.addClef(track.info.clef);
 	}
 }
+// add KeySignature to every staves
 SheetManager.prototype.addKeySignature = function addKeySignature() {
 	var i, stave, track, keySig,
 	    rows = this.staveTable.rows;
@@ -915,6 +941,7 @@ SheetManager.prototype.addKeySignature = function addKeySignature() {
 		keySig.addToStave(stave);
 	}
 }
+// add TimeSignature to first measure or where the TimeSignature changed
 SheetManager.prototype.addTimeSignature = function addTimeSignature() {
 	var i, j, prevMeasure, measure, stave,
 	    tracks = this.staveTable.tracks,
@@ -934,6 +961,7 @@ SheetManager.prototype.addTimeSignature = function addTimeSignature() {
 		}
 	}
 }
+// add single line connector to start and end of every row to group the staves
 SheetManager.prototype.addConnector = function addConnector() {
 	var i, j, stave, nextStave, connector, connector2, 
 	    tracks = this.staveTable.tracks,
@@ -958,11 +986,13 @@ SheetManager.prototype.addConnector = function addConnector() {
 		}
 	}
 }
+// call the event processor to proceed effect should be handled after the decoration finished
 SheetManager.prototype.postStaveFormat = function postStaveFormat() {
 	this.options.effectProcessor.measure.postFormat(this, this.sheet, this.measureEffectList);
 	this.options.effectProcessor.track.postFormat(this, this.sheet, this.trackEffectList);
 }
 
+// draw the staves
 SheetManager.prototype.drawStave = function drawStave() {
 	var self = this;
 	this.staveTable.allStaves().forEach(function (stave) {
@@ -973,6 +1003,7 @@ SheetManager.prototype.drawStave = function drawStave() {
 	});
 }
 
+// getter to get bounding box of objects
 SheetManager.prototype.getAllNoteBoundingBox = function getAllNoteBoundingBox() {
 	var i, j, boxs,
 	    tracks = this.noteTable.tracks,
@@ -1007,6 +1038,7 @@ SheetManager.prototype.getAllStaveBoundingBox = function getAllStaveBoundingBox(
 	return boundingBoxTable;
 }
 
+// change the note colors, must call `renderSheet` again after change finished to make it redraw.
 SheetManager.prototype.setColor = function setColor(track, measure, note, color) {
 	if (Array.isArray(track)) {
 		color = measure;
@@ -1026,6 +1058,7 @@ SheetManager.prototype.setColor = function setColor(track, measure, note, color)
 	
 	return true;
 }
+
 /*
  * methods for modify the sheet
  */
@@ -1115,6 +1148,7 @@ SheetManager.prototype.initEvent = function initEvent() {
 	});
 };
 
+// reset the Input State
 SheetManager.prototype._resetInputState = function _resetInputState() {
 	this.inputState = {
 		position: {
@@ -1198,6 +1232,7 @@ SheetManager.prototype._changeState = function _changeState(state, noEvent) {
 		this.emit('input_state_change', this.inputState, oldState);
 	}
 };
+// given x, y, find the stave under that position
 SheetManager.prototype._findStave = function _findStave(x, y) {
 	var i, j, box,
 	    tracks = this.staveBoundingBoxs.tracks,
@@ -1223,6 +1258,8 @@ SheetManager.prototype._findStave = function _findStave(x, y) {
 		stave: null
 	}
 }
+
+// given staveState, x, y, find the note in staveState under that position
 SheetManager.prototype._findNote = function _findNote(staveState, x, y) {
 	var i, boxs, box, temp,
 			result = {
@@ -1278,6 +1315,8 @@ SheetManager.prototype._findNote = function _findNote(staveState, x, y) {
 	
 	return result;
 }
+
+// trigered when event made
 SheetManager.prototype._onClick = function _onClick(x, y) {
 	var state = {};
 	state.position = {
