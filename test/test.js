@@ -1,4 +1,4 @@
-/* global Sheet, Channel, Measure, Note, NoteEffect, SheetManager */
+/* global Sheet, Channel, Measure, Note, Effect, SheetManager */
 
 var count = 0;
 function runTest(name, test, discription) {
@@ -9,7 +9,6 @@ function runTest(name, test, discription) {
 			$('<a>').attr('href', '#' + id).text(name)
 		)
 	).appendTo('#test-list');
-	console.log($('#test-list'))
   var wrapOut = $('<div>').addClass('wrap-out').appendTo('body').attr('id', id);
   var title = $('<h1>').text(name).appendTo(wrapOut);
   if (discription) {
@@ -43,87 +42,102 @@ function getSheet () {
 	var sheet = Sheet([
 		Channel([
 			Measure([
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "1")]),
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "1")]),
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "1")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "1")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "1"), Effect('tie', "1", [0])]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "1"), Effect('tie', "1", [0])]),
+				Note({ keys: ["db/4"], duration: "8d" }, [Effect('style', null, "red")]),
+				Note({ keys: ["bb/4"], duration: "16" }),
+				Note({ keys: ["b/4"], duration: "qr" }),
+				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
+			], 4, 4, null, null, null, [
+				Effect('text', null, {text: "1nd", position: "ABOVE", options: {shift_y: -10}}),
+				Effect('text', null, {text: "2nd", position: "ABOVE", options: {shift_y: 10}}),
+			]),
+			Measure([], 3, 4),
+			Measure([], 4, 4)
+		],"treble", "C", [Effect('stave_connector', "2", {type: "BRACKET", text: "violin", onEnd: false})]),
+		Channel([
+			Measure([
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "2")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "2")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "2")]),
 				Note({ keys: ["db/4"], duration: "8d" }),
 				Note({ keys: ["bb/4"], duration: "16" }),
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
 			], 4, 4),
-			Measure([], 3, 4),
+			Measure([
+				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" }, [Effect('tie', "3", [0, 2])]),
+				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" }, [Effect('tie', "3", [0, 1])])
+			], 3, 4),
 			Measure([], 4, 4)
-		],"treble", "C"),
+		], "treble", "G", [Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false})]),
 		Channel([
 			Measure([
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "2")]),
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "2")]),
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "2")]),
-				Note({ keys: ["db/4"], duration: "8d" }),
-				Note({ keys: ["bb/4"], duration: "16" }),
-				Note({ keys: ["b/4"], duration: "qr" }),
-				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
-			], 4, 4),
-			Measure([], 3, 4),
-			Measure([], 4, 4)
-		], "treble", "G"),
-		Channel([
-			Measure([
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "3")]),
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "3")]),
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "3")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "3")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "3")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "3")]),
 				Note({ keys: ["db/4"], duration: "8d" }),
 				Note({ keys: ["bb/4"], duration: "16" }),
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" }),
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "k")])
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "k"), Effect('tie', "2", [0])])
 			], 4, 4),
 			Measure([
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "k")]),
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "k")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "k"), Effect('tie', "2", [0])]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "k")]),
 				Note({ keys: ["db/4"], duration: "8d" }),
 				Note({ keys: ["bb/4"], duration: "16" }),
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
 			], 3, 4),
 			Measure([
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "4")]),
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "4")]),
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "4")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "4")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "4")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "4")]),
 				Note({ keys: ["db/4"], duration: "8d" }),
 				Note({ keys: ["bb/4"], duration: "16" }),
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
 			], 4, 4),
 			Measure([
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "5")]),
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "5")]),
-				Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', "5")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "5")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "5")]),
+				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "5")]),
 				Note({ keys: ["db/4"], duration: "8d" }),
 				Note({ keys: ["bb/4"], duration: "16" }),
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
 			], 4, 4)
-		], "treble", "E")
+		], "treble", "E", [Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false})])
 	], 5);
 	return sheet;
-}
-
-//test2
-function createCanvas (canvas, container) {
-	var container = $('<div>').appendTo('body').addClass('wrap');
-	var canvas = $("<canvas>").appendTo(container)[0];
-	
-	canvas.width = 1;
-	canvas.height = 1;
-	return canvas;
 }
 
 function testSheet (canvas, container) {
 	var sheet = getSheet();
 	var manager = new SheetManager(canvas);
 	
-	manager.setSheet(sheet, {cols: 3, width: 1000});
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	
+	manager.drawSheet();
+	console.log(manager)
+}
+function testSheet2 (canvas, container) {
+	var sheet = getSheet();
+	sheet.setMeasureLength(40);
+	var manager = new SheetManager(canvas);
+	
+	manager.setSheet(sheet, {cols: 4, width: 800, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 100});
+	
+	manager.drawSheet();
+	console.log(manager)
+}
+function testSheetMobile (canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	
+	manager.setSheet(sheet, {cols: 1, width: 320});
 	
 	manager.drawSheet();
 	console.log(manager)
@@ -299,9 +313,9 @@ function testMultiInsert(canvas, container) {
 		var target,
 		    id = Math.random(),
 		    tuplet = [
-		      Note({ keys: ["c/4"], duration: "8" }, [NoteEffect('tuplet', id)]),
-		      Note({ keys: ["c/4"], duration: "8r" }, [NoteEffect('tuplet', id)]),
-		      Note({ keys: ["c/4"], duration: "8r" }, [NoteEffect('tuplet', id)])
+		      Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', id)]),
+		      Note({ keys: ["c/4"], duration: "8r" }, [Effect('tuplet', id)]),
+		      Note({ keys: ["c/4"], duration: "8r" }, [Effect('tuplet', id)])
 		    ];
 		
 		console.log('stave', state.stave.index);
@@ -398,7 +412,10 @@ function testRemoveNote(canvas, container) {
 	})
 }
 
-runTest('sheet draw', testSheet);
+runTest('sheet draw', testSheet)
+runTest('another sheet draw', testSheet2);
+runTest('sheet draw - mobile layout', testSheetMobile);
+
 runTest('serialize sheet', testSerialize);
 runTest('get bounding box', testBoundingBox);
 runTest('colored note', testColor);
