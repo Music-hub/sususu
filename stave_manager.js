@@ -47,18 +47,27 @@ Sheet.prototype.setMeasureLength = function setMeasureLength(measureCount) {
 		})
 	}
 };
-Sheet.prototype.toObject = function () {
+// create a shadow object of this sheet, modify this actully cause edit on the original sheet.
+Sheet.prototype.toShadowObject = function toShadowObject() {
 	return {
 		info: this.info,
-		tracks: this.tracks.map(function (track) {return track.toObject()})
+		tracks: this.tracks.map(function (track) {return track.toShadowObject()})
 	}
 }
-Sheet.fromObject = function (obj) {
+// create a safe object by deep copy the object from toShadowObject()
+Sheet.prototype.toObject = function toObject() {
+	return JSON.parse(JSON.stringify(this.toShadowObject()))
+}
+// unserialize the object to Sheet
+Sheet.fromObject = function fromObject(obj) {
 	var sheet;
 	sheet = new Sheet(obj.tracks.map(function (track) {return Channel.fromObject(track)}));
 	sheet.info = obj.info || {};
 	sheet.info.effects = sheet.info.effects || [];
 	return sheet;
+}
+Sheet.prototype.clone = function clone () {
+	return Sheet.fromObject(this.toObject());
 }
 
 // represent a single track in a sheet, a sheet can have more than one sheet
@@ -76,6 +85,11 @@ function Channel(measures, clef,  keySignature, effects) {
 	}
 	this.measures = measures || [];
 }
+Channel.prototype.createNewChannel = function createNewMeasure () {
+	var i, newChannel = new Channel([]);
+	newChannel.info = JSON.parse(JSON.stringify(this.info));
+	return newChannel;
+};
 Channel.prototype.fillMeasure = function fillMeasure (num) {
 	while (this.measures.length < num) {
 		this.measures.push(
@@ -86,19 +100,27 @@ Channel.prototype.fillMeasure = function fillMeasure (num) {
 		this.measures = this.measures.slice(0, num - 1);
 	}
 };
-
-Channel.prototype.toObject = function () {
+// create a shadow object of this Channel, modify this actully cause edit on the original Channel.
+Channel.prototype.toShadowObject = function toShadowObject() {
 	return {
 		info: this.info,
-		measures: this.measures.map(function (measure) {return measure.toObject()})
+		measures: this.measures.map(function (measure) {return measure.toShadowObject()})
 	}
 }
-Channel.fromObject = function (obj) {
+// create a safe object by deep copy the object from toShadowObject()
+Channel.prototype.toObject = function toObject() {
+	return JSON.parse(JSON.stringify(this.toShadowObject()))
+}
+// unserialize the object to Channel
+Channel.fromObject = function fromObject(obj) {
 	var channel;
 	channel = new Channel(obj.measures.map(function (measure) {return Measure.fromObject(measure)}));
 	channel.info = obj.info || {};
 	channel.info.effects = channel.info.effects || [];
 	return channel;
+}
+Channel.prototype.clone = function clone() {
+	return Channel.fromObject(this.toObject());
 }
 
 // represent a single measure in a track, a track can have more than one measure
@@ -116,28 +138,32 @@ function Measure(notes, numBeats, beatValue, begBarType, endBarType, chord, effe
 	};
 	this.notes = notes || [];
 }
-Measure.prototype.createNewMeasure = function createNewMeasure () {
+Measure.prototype.createNewMeasure = function createNewMeasure() {
 	var i, newMeasure = new Measure();
-	for (i in this.info) {
-		if (this.info.hasOwnProperty(i)) {
-			newMeasure.info[i] = this.info[i];
-		}
-	}
+	newMeasure.info = JSON.parse(JSON.stringify(this.info));
 	return newMeasure;
 };
-
-Measure.prototype.toObject = function () {
+// create a shadow object of this Measure, modify this actully cause edit on the original Measure.
+Measure.prototype.toShadowObject = function toShadowObject() {
 	return {
 		info: this.info,
-		notes: this.notes.map(function (note) {return note.toObject()})
+		notes: this.notes.map(function (note) {return note.toShadowObject()})
 	}
 }
-Measure.fromObject = function (obj) {
+// create a safe object by deep copy the object from toShadowObject()
+Measure.prototype.toObject = function toObject() {
+	return JSON.parse(JSON.stringify(this.toShadowObject()))
+}
+// unserialize the object to Measure
+Measure.fromObject = function fromObject(obj) {
 	var measure;
 	measure = new Measure(obj.notes.map(function (note) {return Note.fromObject(note)}));
 	measure.info = obj.info || {};
 	measure.info.effects = measure.info.effects || [];
 	return measure;
+}
+Measure.prototype.clone = function clone() {
+	return Measure.fromObject(this.toObject());
 }
 
 // represent a single note in a measure, a measure can have more than one note
@@ -146,24 +172,33 @@ function Note(struct, effects) {
 		return new Note (struct, effects);
 	}
 	if (!(this instanceof Note)) {
-		return new Note (struct, info);
+		return new Note (struct, effects);
 	}
 	this.struct = struct;
 	this.info = {
 		effects: effects || []
 	};
 }
-Note.prototype.toObject = function () {
+// create a shadow object of this Note, modify this actully cause edit on the original Note.
+Note.prototype.toShadowObject = function toShadowObject() {
 	return {
 		struct: this.struct,
 		info: this.info
 	}
 }
-Note.fromObject = function (obj) {
+// create a safe object by deep copy the object from toShadowObject()
+Note.prototype.toObject = function toObject() {
+	return JSON.parse(JSON.stringify(this.toShadowObject()))
+}
+// unserialize the object to Note
+Note.fromObject = function fromObject(obj) {
 	var note = new Note(obj.struct);
 	note.info = obj.info || {};
 	note.info.effects = note.info.effects || [];
 	return note;
+}
+Note.prototype.clone = function clone() {
+	return Note.fromObject(this.toObject());
 }
 
 // a convenient class to generate a effect stature of either sheet, track, measure, note
@@ -627,7 +662,7 @@ SheetManager.prototype.addNoteEffect = function addNoteEffect() {
 						})
 						return;
 					}
-					if (!effectMap[effect.type + '-' + effect.id]) {
+					if (!effectMap[i + "-" + effect.type + '-' + effect.id]) {
 						effect = {
 							type: effect.type,
 							id: effect.id,
@@ -635,12 +670,12 @@ SheetManager.prototype.addNoteEffect = function addNoteEffect() {
 							indexes: [index],
 							items: [self.noteTable.staveByTrack(i, j)[k]]
 						};
-						effectMap[effect.type + '-' + effect.id] = effect;
+						effectMap[i + "-" + effect.type + '-' + effect.id] = effect;
 						effectList.push(effect);
 					} else {
-						effectMap[effect.type + '-' + effect.id].datas.push(effect.data)
-						effectMap[effect.type + '-' + effect.id].indexes.push(index)
-						effectMap[effect.type + '-' + effect.id].items.push(self.noteTable.staveByTrack(i, j)[k])
+						effectMap[i + "-" + effect.type + '-' + effect.id].datas.push(effect.data)
+						effectMap[i + "-" + effect.type + '-' + effect.id].indexes.push(index)
+						effectMap[i + "-" + effect.type + '-' + effect.id].items.push(self.noteTable.staveByTrack(i, j)[k])
 					}
 				})
 			}
