@@ -4,7 +4,7 @@ var count = 0;
 function runTest(name, test, discription) {
 	var id = "test" + count;
 	count++;
-	$('<tr>').append(
+	var menuRow = $('<tr>').append(
 		$('<td>').append(
 			$('<a>').attr('href', '#' + id).text(name)
 		)
@@ -30,14 +30,21 @@ function runTest(name, test, discription) {
 	    wrapOut.append(
   	    $('<p>').text(e.stack.toString())
   	  )
+	  menuRow.append(
+			$('<td>').text('failed: ' + e.toString())
+		)
 	  }
 	  console.error(e);
 	  success = false;
 	}
 	if (success) {
+		var time = (Date.now() - start);
 	  wrapOut.append(
-	    $('<p>').text('done - without error - ' + (Date.now() - start) + "ms")
+	    $('<p>').text('done - without error - ' + time + "ms")
 	  )
+	  menuRow.append(
+			$('<td>').text('success: ' + time + "ms")
+		)
 	}
 }
 
