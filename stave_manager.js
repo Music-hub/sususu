@@ -1429,10 +1429,10 @@ SheetManager.prototype.addTrackEffect = function addTrackEffect(index, effect) {
 	}
 }
 // effect: either a String of Effect type or Effect instance
-SheetManager.prototype.removeEffect = function removeEffect(index, effect) {
-	if (index.length === 3) return this.removeNoteEffect(index, effect);
-	if (index.length === 2) return this.removeMeasureEffect(index, effect);
-	if (index.length === 1) return this.removeTrackEffect(index, effect);
+SheetManager.prototype.removeEffect = function removeEffect(index, effect, id) {
+	if (index.length === 3) return this.removeNoteEffect(index, effect, id);
+	if (index.length === 2) return this.removeMeasureEffect(index, effect, id);
+	if (index.length === 1) return this.removeTrackEffect(index, effect, id);
 	this.emit('error', new Error('unknown index: ' + JSON.stringify(index)));
 	return false;
 }
@@ -1491,6 +1491,20 @@ SheetManager.prototype.removeTrackEffect = function removeTrackEffect(index, eff
 	}
 }
 // same as addEffect, but remove old effect if there is already effect in same type.
+SheetManager.prototype.getEffect = function getEffect(index) {
+	try {
+		switch (index.length) {
+			case 3: return this.sheet.tracks[index[0]].measures[index[1]].notes[index[2]].info.effects
+			case 2: return this.sheet.tracks[index[0]].measures[index[1]].info.effects
+			case 1: return this.sheet.tracks[index[0]].info.effects
+			default:
+				this.emit('error', new Error('unknown index: ' + JSON.stringify(index)));
+		}
+	} catch (e) {
+		this.emit('error', e);
+	}
+	return false;
+}
 SheetManager.prototype.addUniqueEffect = function addUniqueEffect(index, effect) {
 	this.removeEffect(index, effect.type);
 	this.addEffect(index, effect);

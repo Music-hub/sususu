@@ -539,6 +539,32 @@ function testRemoveEffect(canvas, container) {
 	manager.drawSheet();
 	console.log(manager)
 }
+function testAddUniqueEffects(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	var staveConnector = new Effect('stave_connector', Math.random(), {type: "BRACKET", text: "violin", onEnd: false, all: false});
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	manager.addUniqueEffect([1], staveConnector);
+	manager.addUniqueEffect([2], staveConnector);
+	manager.setSheet()
+	manager.drawSheet();
+	console.log(manager)
+}
+function testGetEffects(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	var textBoard = $('<pre>').appendTo(container).css('height', '400px').css('text-align', 'left');
+	var result = "";
+	var staveConnector = new Effect('stave_connector', Math.random(), {type: "BRACKET", text: "violin", onEnd: false, all: false});
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	
+	result += JSON.stringify(manager.getEffect([0]), null, 2) + '\r\n';
+	result += JSON.stringify(manager.getEffect([0, 0]), null, 2) + '\r\n';
+	result += JSON.stringify(manager.getEffect([0, 0, 1]), null, 2) + '\r\n';
+	textBoard.text(result);
+	manager.drawSheet();
+	console.log(manager)
+}
 runTest('sheet draw', testSheet)
 runTest('another sheet draw', testSheet2);
 runTest('sheet draw - mobile layout', testSheetMobile);
@@ -557,3 +583,5 @@ runTest('change measure count to 6', testChangeMeasureLength);
 runTest('change measure count to 4', testChangeMeasureLength2);
 runTest('test add effect', testAddEffect);
 runTest('test remove effect', testRemoveEffect);
+runTest('test add unique effect', testAddUniqueEffects);
+runTest('test get effects', testGetEffects);
