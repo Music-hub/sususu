@@ -172,6 +172,7 @@ function Measure(notes, numBeats, beatValue, begBarType, endBarType, chord, effe
 Measure.prototype.createNewMeasure = function createNewMeasure() {
 	var i, newMeasure = new Measure();
 	newMeasure.info = JSON.parse(JSON.stringify(this.info));
+	newMeasure.info.effects = [];
 	return newMeasure;
 };
 // create a shadow object of this Measure, modify this actully cause edit on the original Measure.
@@ -410,8 +411,12 @@ EffectProcessor.measureEffectSets = [
 		validate: function (sheetManager, sheet, type, id, indexes, items, datas, fix, change, result) {
 			if (type !== "stave_connector") return;
 			// if some effect should cross all staves, than it should
-			if (change && change.op === "add" && datas[0].all === true) {
-				
+			if (fix && change && change.op === "add" && datas[0].all === true) {
+				var measure = indexes[0][1];
+				var i;
+				for (i = change.index; i < change.index + change.count; i++) {
+					sheetManager.addEffect([i, measure], new Effect(type, id, datas[0]));
+				}
 			}
 		}
 	}
@@ -1214,7 +1219,7 @@ SheetManager.prototype._fixTrack = function _fixTrack(operation, index, count) {
 	var sheet = this.sheet;
 	var measureCount = sheet.getMeasureCount();
 	if (operation === 'add') {
-		var oldTrack = index === 0 ? this.sheet.tracks[index] : this.sheet.tracks[0];
+		var oldTrack = index === 0 ? this.sheet.tracks[index + count] : this.sheet.tracks[0];
 		sheet.setMeasureLength(measureCount);
 		var newTracks = this.sheet.tracks.slice(index, index + count);
 		
@@ -1363,7 +1368,8 @@ SheetManager.prototype.reloadEffectSets = function reloadEffectSets() {
 		
 		for (i = 0; i < tracks; i++) {
 			for (j = 0; j < measures; j++) {
-				measure = this.sheet.tracks[i].measures[j];
+				var measure = this.sheet.tracks[i].measures[j];
+				index = [i, j]
 				measure.info.effects.forEach(function (effect) {
 					if (!effect.id) {
 						effectList.push({

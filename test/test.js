@@ -64,7 +64,9 @@ function getSheet () {
 				Effect('text', null, {text: "2nd", position: "ABOVE", options: {shift_y: 10}}),
 			]),
 			Measure([], 3, 4),
-			Measure([], 4, 4)
+			Measure([], 4, 4, null, null, null, [
+				Effect('stave_connector', "5", {type: "BRACE", text: "aaaa", onEnd: false, all: true})
+			])
 		],"treble", "C", [
 			Effect('stave_connector', "2", {type: "BRACKET", text: "violin", onEnd: false, all: false}),
 			Effect('stave_connector', "3", {type: "BOLD_DOUBLE_RIGHT", onEnd: true, all: false})
@@ -83,9 +85,11 @@ function getSheet () {
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" }, [Effect('tie', "3", [0, 2])]),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" }, [Effect('tie', "3", [0, 1])])
 			], 3, 4, null, null, null, [
-				Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false, all: true})
+				Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false, all: false})
 			]),
-			Measure([], 4, 4)
+			Measure([], 4, 4, null, null, null, [
+				Effect('stave_connector', "5", {type: "BRACE", text: "aaaa", onEnd: false, all: true})
+			])
 		], "treble", "G", [
 			Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false, all: false})
 		]),
@@ -108,7 +112,7 @@ function getSheet () {
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
 			], 3, 4, null, null, null, [
-				Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false, all: true})
+				Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false, all: false})
 			]),
 			Measure([
 				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "4")]),
@@ -118,7 +122,9 @@ function getSheet () {
 				Note({ keys: ["bb/4"], duration: "16" }),
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
-			], 4, 4),
+			], 4, 4, null, null, null, [
+				Effect('stave_connector', "5", {type: "BRACE", text: "aaaa", onEnd: false, all: true})
+			]),
 			Measure([
 				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "5")]),
 				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "5")]),
