@@ -21,6 +21,34 @@ var inherits = function(ctor, superCtor) {
   });
 };
 
+var MyEventEmitter = (function (oldEventEmitter) {
+	function EventEmitter() {
+		oldEventEmitter.call(this)
+	}
+	inherits(EventEmitter, oldEventEmitter);
+	// throw it if `error` got called without listeners
+	EventEmitter.prototype.emit = function emit(name, data) {
+		if (name === 'error') {
+			if (this.getListeners('error').length === 0) {
+				throw data;
+			}
+		}
+		EventEmitter.super_.prototype.emit.apply(this, arguments);
+	}
+	return EventEmitter;
+} (EventEmitter))
+
+function TrackChange(op, index, affectedCount) {
+	if (!(this instanceof TrackChange)) {
+		return new TrackChange(op, index, affectedCount)
+	}
+	if (0 > (['add', 'remove']).indexOf(op)) throw new Error('unknown operation: ' + op);
+	this.op = op;
+	this.index = index;
+	this.count = affectedCount;
+}
+
+
 // represent a music sheet
 function Sheet(tracks, measureCount) {
 	if (!(this instanceof Sheet)) {
@@ -91,13 +119,16 @@ Channel.prototype.createNewChannel = function createNewMeasure () {
 	return newChannel;
 };
 Channel.prototype.fillMeasure = function fillMeasure (num) {
+	if (this.measures.length === 0) {
+		this.measures.push(new Measure([], 4, 4));
+	}
 	while (this.measures.length < num) {
 		this.measures.push(
 			this.measures[this.measures.length - 1].createNewMeasure()
 		)
 	}
 	if (this.measures.length > num) {
-		this.measures = this.measures.slice(0, num - 1);
+		this.measures = this.measures.slice(0, num);
 	}
 };
 // create a shadow object of this Channel, modify this actully cause edit on the original Channel.
@@ -248,12 +279,27 @@ EffectProcessor.prototype.postFormat = function processEffect(sheetManager, shee
 		self.emit('postformat', sheetManager, sheet, set.type, set.id, set.indexes, set.items, set.datas);
 	})
 }
+/*
+ * Boolean fix: should processor try to fix the effect if the effect is incorrect
+ */
+EffectProcessor.prototype.validate = function validate(sheetManager, sheet, effectSets, fix, change) {
+	var self = this;
+	var result = {pass: true, error: null};
+	effectSets.forEach(function (set) {
+		self.emit('validate', sheetManager, sheet, set.type, set.id, set.indexes, set.items, set.datas, fix, change, result);
+	})
+	return result;
+}
 EffectProcessor.prototype.addEffectSets = function addEffectSet(sets) {
 	var self = this;
 	if (!Array.isArray(sets)) sets = [sets];
 	sets.forEach(function (set) {
-		if (set.preformat) self.on('preformat', set.preformat)
-		if (set.postformat) self.on('postformat', set.postformat)
+		var name;
+		for (name in set) {
+			if (set.hasOwnProperty(name)) {
+				self.on(name, set[name]);
+			}
+		}
 	})
 }
 
@@ -342,7 +388,34 @@ EffectProcessor.measureEffectSets = [
       	stave.setText(info.text, Vex.Flow.Modifier.Position[info.position || "ABOVE"], info.options || {});
 			})
 		}
-	}];
+	},
+	// handler for stave connectors
+	{
+		preformat: function (sheetManager, sheet, type, id, indexes, items, datas) {
+			if (type !== "stave_connector") return;
+			if (items.length < 1) return;
+			var firstStave, secondStave;
+
+			var info = datas[0];
+			firstStave = items[0]
+			secondStave =items[items.length - 1];
+					
+      var connector = new Vex.Flow.StaveConnector(firstStave, secondStave);
+      connector.setType(Vex.Flow.StaveConnector.type[info.type || "SINGLE"]);
+      if (info.text) {
+      	connector.setText(info.text);
+      }
+			sheetManager.staveDrawables.push(connector)
+		},
+		validate: function (sheetManager, sheet, type, id, indexes, items, datas, fix, change, result) {
+			if (type !== "stave_connector") return;
+			// if some effect should cross all staves, than it should
+			if (change && change.op === "add" && datas[0].all === true) {
+				
+			}
+		}
+	}
+];
 
 // a data structure that implements both track/measure and colume/row based getter and setter of music sheets.
 function MeasureManager (tracks, measures, cols) {
@@ -445,7 +518,7 @@ MeasureManager.prototype.forEachTrack = function forEachTrack(cb) {
 // main class for handle all sheet drawing and manipulating methods
 function SheetManager (canvas, options)
 {
-	EventEmitter.call(this);
+	MyEventEmitter.call(this);
 	
 	this.canvas = canvas;
 	
@@ -471,8 +544,9 @@ function SheetManager (canvas, options)
 		extraHeadStaveWidth: 40
 	}
 	this.init(options);
+	this.on('error', console.error.bind(console));
 }
-inherits(SheetManager, EventEmitter);
+inherits(SheetManager, MyEventEmitter);
 
 
 SheetManager.prototype.mergeOptions = function mergeOptions(obj1,obj2){
@@ -571,7 +645,7 @@ SheetManager.prototype.preDrawSheet = function preDrawSheet() {
 	this.postStaveFormat();
 
 	this.createNote();
-	this.addNoteEffect();
+	this.processNoteEffect();
 	this.createVoice();
 	this.addDot()
 	this.addAccidental()
@@ -636,7 +710,7 @@ SheetManager.prototype.createNote = function createNote() {
 }
 
 // collect the note as a set, save it, call effect processor to process effect
-SheetManager.prototype.addNoteEffect = function addNoteEffect() {
+SheetManager.prototype.processNoteEffect = function processNoteEffect() {
 	var i, j, k, notes, note, index, effect,
 	    self = this,
 	    tracks = this.noteTable.tracks,
@@ -1101,7 +1175,8 @@ SheetManager.prototype.setColor = function setColor(track, measure, note, color)
 /*
  * methods for modify the sheet
  */
-SheetManager.prototype.insertNote = function insertNote(index, note) {
+// add a note at specified `index: Number[]`
+SheetManager.prototype.addNote = function insertNote(index, note) {
 	var measure, sheet =this.sheet;
 	try {
 		if (!Array.isArray(note)) note = [note]
@@ -1116,10 +1191,11 @@ SheetManager.prototype.insertNote = function insertNote(index, note) {
 		console.log(measure.notes);
 		return true;
 	} catch (e) {
-		console.error(e)
+		this.emit('error', e);
 		return false;
 	}
 }
+// remove a note at specified `index: Number[]`
 SheetManager.prototype.removeNote = function removeNote(index) {
 	var measure, sheet =this.sheet;
 	try {
@@ -1128,9 +1204,296 @@ SheetManager.prototype.removeNote = function removeNote(index) {
 		measure.notes.splice(index[2], 1);
 		return true;
 	} catch (e) {
-		console.error(e)
+		this.emit('error', e);
 		return false;
 	}
+}
+// called after a new track is inserted or removed, fill measures with correct length, and make time signature the same with orignal one.
+SheetManager.prototype._fixTrack = function _fixTrack(operation, index, count) {
+	var i;
+	var sheet = this.sheet;
+	var measureCount = sheet.getMeasureCount();
+	if (operation === 'add') {
+		var oldTrack = index === 0 ? this.sheet.tracks[index] : this.sheet.tracks[0];
+		sheet.setMeasureLength(measureCount);
+		var newTracks = this.sheet.tracks.slice(index, index + count);
+		
+		for (i = 0; i < measureCount; i++) {
+			newTracks.forEach(function (track) {
+				track.measures[i].info.numBeats = oldTrack.measures[i].info.numBeats;
+	 			track.measures[i].info.beatValue = oldTrack.measures[i].info.beatValue;
+			})
+		}
+	}
+	var affectedState = TrackChange(operation, index, count);
+	this.reloadEffectSets();
+	console.log('current state', this)
+	this.options.effectProcessor.track.validate(this, this.sheet, this.trackEffectList, true, affectedState);
+	this.options.effectProcessor.measure.validate(this, this.sheet, this.measureEffectList, true, affectedState);
+	this.options.effectProcessor.note.validate(this, this.sheet, this.noteEffectList, true, affectedState);
+}
+// add a new track
+SheetManager.prototype.addTrack = function addTrack(index, track) {
+	var sheet =this.sheet;
+	try {
+		if (!Array.isArray(track)) track = [track];
+		[].splice.apply(sheet.tracks, [index, 0].concat(track));
+		this._fixTrack('add', index, track.length);
+		return true;
+	} catch (e) {
+		this.emit('error', e);
+		return false;
+	}
+}
+// remove the track, also fix the effects if neccesery.
+SheetManager.prototype.removeTrack = function addTrack(index, count) {
+	var temp, sheet = this.sheet;
+	count = count || 1;
+	try {
+		temp = sheet.tracks.splice(index, count);
+		this._fixTrack('remove', index, count);
+		return temp;
+	} catch (e) {
+		this.emit('error', e);
+		return false;
+	}
+}
+// setMeasureLength
+SheetManager.prototype.setMeasureLength = function addTrack(length) {
+	return this.sheet.setMeasureLength(length);
+}
+
+/*
+ * note, measure, track effect related method
+ */
+/* 
+ * manually reload effect sets without reformat effect sets after effect is modfied.
+ * items field will be null since the layout haven't reload, match the layout isn't possible here
+ */
+SheetManager.prototype.reloadEffectSets = function reloadEffectSets() {
+	(function () {
+		var i, j, k, notes, note, index, effect,
+		    self = this,
+		    tracks = this.sheet.tracks.length,
+		    measures = this.sheet.tracks[0].measures.length,
+		    effectMap = {}, 
+		    effectList = [];
+		
+		for (i = 0; i < tracks; i++) {
+			for (j = 0; j < measures; j++) {
+				notes = this.sheet.tracks[i].measures[j].notes;
+				for (k = 0; k < notes.length; k++) {
+					index = [i, j, k];
+					note = notes[k];
+					// console.log(note, index);
+					note.info.effects.forEach(function (effect) {
+						if (!effect.id) {
+							effectList.push({
+								type: effect.type,
+								id: null,
+								datas: [effect.data],
+								indexes: [index],
+								items: null
+							})
+							return;
+						}
+						if (!effectMap[i + "-" + effect.type + '-' + effect.id]) {
+							effect = {
+								type: effect.type,
+								id: effect.id,
+								datas: [effect.data],
+								indexes: [index],
+								items: null
+							};
+							effectMap[i + "-" + effect.type + '-' + effect.id] = effect;
+							effectList.push(effect);
+						} else {
+							effectMap[i + "-" + effect.type + '-' + effect.id].datas.push(effect.data)
+							effectMap[i + "-" + effect.type + '-' + effect.id].indexes.push(index)
+						}
+					})
+				}
+			}
+		}
+		console.log(effectMap, effectList)
+		this.noteEffectList = effectList;
+	}).apply(this);
+	(function () {
+		var i, effectMap = {}, effectList = [], track, index,
+		    self = this,
+		    tracks = this.sheet.tracks.length;
+		for (i = 0; i < tracks; i++) {
+			index = [i];
+			track = this.sheet.tracks[i];
+			track.info.effects.forEach(function (effect) {
+				if (!effect.id) {
+					effectList.push({
+						type: effect.type,
+						id: null,
+						datas: [effect.data],
+						indexes: [index],
+						items: null
+					});
+					return;
+				}
+				if (!effectMap[effect.type + '-' + effect.id]) {
+					effectMap[effect.type + '-' + effect.id] = {
+						type: effect.type,
+						id: null,
+						datas: [effect.data],
+						indexes: [index],
+						items: null
+					};
+					effectList.push(effectMap[effect.type + '-' + effect.id]);
+				} else {
+					effectMap[effect.type + '-' + effect.id].datas.push(effect.data);
+					effectMap[effect.type + '-' + effect.id].indexes.push(index);
+				}
+			})
+		}
+		this.trackEffectList = effectList;
+	}).apply(this);
+	(function () {
+		var i, j, k, notes, note, index, effect,
+		    self = this,
+		    tracks = this.sheet.tracks.length,
+		    measures = this.sheet.tracks[0].measures.length,
+		    effectMap = {}, 
+		    effectList = [];
+		
+		for (i = 0; i < tracks; i++) {
+			for (j = 0; j < measures; j++) {
+				measure = this.sheet.tracks[i].measures[j];
+				measure.info.effects.forEach(function (effect) {
+					if (!effect.id) {
+						effectList.push({
+							type: effect.type,
+							id: null,
+							datas: [effect.data],
+							indexes: [index],
+							items: null
+						})
+						return;
+					}
+					if (!effectMap[effect.type + '-' + effect.id]) {
+						effect = {
+							type: effect.type,
+							id: effect.id,
+							datas: [effect.data],
+							indexes: [index],
+							items: null
+						};
+						effectMap[effect.type + '-' + effect.id] = effect;
+						effectList.push(effect);
+					} else {
+						effectMap[effect.type + '-' + effect.id].datas.push(effect.data)
+						effectMap[effect.type + '-' + effect.id].indexes.push(index)
+					}
+				});
+			}
+		}
+		console.log(effectMap, effectList)
+		this.measureEffectList = effectList;
+	}).apply(this);
+}
+/*
+ * index: length 1 ~ 3 array of Number or "*"
+ * effect: effect instance to be set
+ */
+SheetManager.prototype.addEffect = function addEffect(index, effect) {
+	if (index.length === 3) return this.addNoteEffect(index, effect);
+	if (index.length === 2) return this.addMeasureEffect(index, effect);
+	if (index.length === 1) return this.addTrackEffect(index, effect);
+	this.emit('error', new Error('unknown index: ' + JSON.stringify(index)));
+	return false;
+}
+SheetManager.prototype.addNoteEffect = function addNoteEffect(index, effect) {
+	try {
+		this.sheet.tracks[index[0]].measures[index[1]].notes[index[2]].info.effects.push(effect);
+	} catch (e) {
+		this.emit('error', new Error('error addNoteEffect: ' + e.toString()));
+	}
+}
+SheetManager.prototype.addMeasureEffect = function addMeasureEffect(index, effect) {
+	try {
+		this.sheet.tracks[index[0]].measures[index[1]].info.effects.push(effect);
+	} catch (e) {
+		this.emit('error', new Error('error addNoteEffect: ' + e.toString()));
+	}
+}
+SheetManager.prototype.addTrackEffect = function addTrackEffect(index, effect) {
+	try {
+		this.sheet.tracks[index[0]].info.effects.push(effect);
+	} catch (e) {
+		this.emit('error', new Error('error addNoteEffect: ' + e.toString()));
+	}
+}
+// effect: either a String of Effect type or Effect instance
+SheetManager.prototype.removeEffect = function removeEffect(index, effect) {
+	if (index.length === 3) return this.removeNoteEffect(index, effect);
+	if (index.length === 2) return this.removeMeasureEffect(index, effect);
+	if (index.length === 1) return this.removeTrackEffect(index, effect);
+	this.emit('error', new Error('unknown index: ' + JSON.stringify(index)));
+	return false;
+}
+SheetManager.prototype.removeNoteEffect = function removeNoteEffect(index, effect, id) {
+	try {
+		var effectList = this.sheet.tracks[index[0]].measures[index[1]].notes[index[2]].info.effects;
+		var i;
+		id = id || null;
+		if ('object' === typeof effect) {
+			id = effect.id;
+			effect = effect.tpye;
+		}
+		for (i = effectList.length - 1; i >= 0; i--) {
+			if (effectList[i].type === effect && (id == null || effectList[i].id === id)) {
+				effectList.splice(i, 1);
+			}
+		}
+	} catch (e) {
+		this.emit('error', new Error('error removeNoteEffect: ' + e.toString()));
+	}
+}
+SheetManager.prototype.removeMeasureEffect = function removeMeasureEffect(index, effect, id) {
+	try {
+		var effectList = this.sheet.tracks[index[0]].measures[index[1]].info.effects;
+		var i;
+		id = id || null;
+		if ('object' === typeof effect) {
+			id = effect.id;
+			effect = effect.tpye;
+		}
+		for (i = effectList.length - 1; i >= 0; i--) {
+			if (effectList[i].type === effect && (id == null || effectList[i].id === id)) {
+				effectList.splice(i, 1);
+			}
+		}
+	} catch (e) {
+		this.emit('error', new Error('error removeNoteEffect: ' + e.toString()));
+	}
+}
+SheetManager.prototype.removeTrackEffect = function removeTrackEffect(index, effect, id) {
+	try {
+		var effectList = this.sheet.tracks[index[0]].info.effects;
+		var i;
+		id = id || null;
+		if ('object' === typeof effect) {
+			id = effect.id;
+			effect = effect.tpye;
+		}
+		for (i = effectList.length - 1; i >= 0; i--) {
+			if (effectList[i].type === effect && (id == null || effectList[i].id === id)) {
+				effectList.splice(i, 1);
+			}
+		}
+	} catch (e) {
+		this.emit('error', new Error('error removeNoteEffect: ' + e.toString()));
+	}
+}
+// same as addEffect, but remove old effect if there is already effect in same type.
+SheetManager.prototype.addUniqueEffect = function addUniqueEffect(index, effect) {
+	this.removeEffect(index, effect.type);
+	this.addEffect(index, effect);
 }
 
 /*

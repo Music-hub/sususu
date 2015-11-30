@@ -28,7 +28,7 @@ function runTest(name, test, discription) {
 	  )
 	  if (e.stack) {
 	    wrapOut.append(
-  	    $('<p>').text(e.stack.toString())
+  	    $('<p>').text(e.stack.toString()).css('white-space', 'pre-wrap')
   	  )
 	  menuRow.append(
 			$('<td>').text('failed: ' + e.toString())
@@ -66,8 +66,8 @@ function getSheet () {
 			Measure([], 3, 4),
 			Measure([], 4, 4)
 		],"treble", "C", [
-			Effect('stave_connector', "2", {type: "BRACKET", text: "violin", onEnd: false}),
-			Effect('stave_connector', "3", {type: "BOLD_DOUBLE_RIGHT", onEnd: true})
+			Effect('stave_connector', "2", {type: "BRACKET", text: "violin", onEnd: false, all: false}),
+			Effect('stave_connector', "3", {type: "BOLD_DOUBLE_RIGHT", onEnd: true, all: false})
 		]),
 		Channel([
 			Measure([
@@ -82,10 +82,12 @@ function getSheet () {
 			Measure([
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" }, [Effect('tie', "3", [0, 2])]),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" }, [Effect('tie', "3", [0, 1])])
-			], 3, 4),
+			], 3, 4, null, null, null, [
+				Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false, all: true})
+			]),
 			Measure([], 4, 4)
 		], "treble", "G", [
-			Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false})
+			Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false, all: false})
 		]),
 		Channel([
 			Measure([
@@ -105,7 +107,9 @@ function getSheet () {
 				Note({ keys: ["bb/4"], duration: "16" }),
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
-			], 3, 4),
+			], 3, 4, null, null, null, [
+				Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false, all: true})
+			]),
 			Measure([
 				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "4")]),
 				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "4")]),
@@ -125,8 +129,8 @@ function getSheet () {
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
 			], 4, 4)
 		], "treble", "E", [
-			Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false}),
-			Effect('stave_connector', "3", {type: "BOLD_DOUBLE_RIGHT", onEnd: true})
+			Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false, all: false}),
+			Effect('stave_connector', "3", {type: "BOLD_DOUBLE_RIGHT", onEnd: true, all: false})
 		])
 	], 5);
 	return sheet;
@@ -273,7 +277,7 @@ function testEvent(canvas, container) {
 			} else {
 				target = state.stave.index.concat([0]);
 			}
-			manager.insertNote(target, Note({ keys: ["db/4"], duration: "8d" }));
+			manager.addNote(target, Note({ keys: ["db/4"], duration: "8d" }));
 			try {
 				manager.setSheet();
 				manager.drawSheet();
@@ -349,7 +353,7 @@ function testMultiInsert(canvas, container) {
 			} else {
 				target = state.stave.index.concat([0]);
 			}
-			manager.insertNote(target, tuplet);
+			manager.addNote(target, tuplet);
 			try {
 				manager.setSheet();
 				manager.drawSheet();
@@ -433,6 +437,108 @@ function testRemoveNote(canvas, container) {
 	})
 }
 
+function testInsertTrack(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	manager.addTrack(0, new Channel([], "bass", "Eb"));
+	manager.setSheet();
+	manager.drawSheet();
+	console.log(manager)
+}
+function testInsertTrack2(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	manager.addTrack(1, [
+		new Channel([], "bass", "Eb"),
+		new Channel([], "treble", "D")
+	]);
+	manager.setSheet();
+	manager.drawSheet();
+	console.log(manager)
+}
+function testRemoveTrack(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	manager.removeTrack(0, 1);
+	manager.setSheet();
+	manager.drawSheet();
+	console.log(manager)
+}
+function testRemoveTrack(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	manager.removeTrack(0, 1);
+	manager.setSheet();
+	manager.drawSheet();
+	console.log(manager)
+}
+function testRemoveTrack2(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	manager.removeTrack(1, 2);
+	manager.setSheet();
+	manager.drawSheet();
+	console.log(manager)
+}
+function testChangeMeasureLength(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	manager.setMeasureLength(6);
+	manager.setSheet();
+	manager.drawSheet();
+	console.log(manager)
+}
+function testChangeMeasureLength2(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	manager.setMeasureLength(4);
+	manager.setSheet();
+	manager.drawSheet();
+	console.log(manager)
+}
+function testAddEffect(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	
+	var tie = new Effect('tie', Math.random(), [0]);
+	var staveConnector = new Effect('stave_connector', Math.random(), {type: "BRACKET", text: "violin", onEnd: false, all: false});
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	manager.addEffect([0, 0, 0], tie);
+	manager.addEffect([0, 0, 2], tie);
+	manager.addEffect([0, 2], staveConnector);
+	manager.addEffect([1, 2], staveConnector);
+	manager.addEffect([2], staveConnector);
+	manager.setSheet()
+	manager.drawSheet();
+	console.log(manager)
+}
+function testRemoveEffect(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	manager.removeEffect([0, 0, 1], 'tie');
+	manager.removeEffect([0, 0, 2], 'tie');
+	manager.removeEffect([1, 1], 'stave_connector');
+	manager.removeEffect([2, 1], 'stave_connector');
+	manager.removeEffect([0], 'stave_connector');
+	manager.setSheet()
+	manager.drawSheet();
+	console.log(manager)
+}
 runTest('sheet draw', testSheet)
 runTest('another sheet draw', testSheet2);
 runTest('sheet draw - mobile layout', testSheetMobile);
@@ -443,3 +549,11 @@ runTest('colored note', testColor);
 runTest('insert single note', testEvent, "click anywhere on stave to insert a note");
 runTest('insert tuplet', testMultiInsert, "click anywhere on stave to insert a tuplet");
 runTest('remove note', testRemoveNote, "click on a note to remove it");
+runTest('insert a new track at index 0', testInsertTrack);
+runTest('insert two new tracks at index 1', testInsertTrack2);
+runTest('remove first track', testRemoveTrack);
+runTest('remove second and third track', testRemoveTrack2);
+runTest('change measure count to 6', testChangeMeasureLength);
+runTest('change measure count to 4', testChangeMeasureLength2);
+runTest('test add effect', testAddEffect);
+runTest('test remove effect', testRemoveEffect);
