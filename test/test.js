@@ -304,12 +304,12 @@ function testEvent(canvas, container) {
 	})
 	manager.on('leave_note', function (state, oldState) {
 		console.log('note leave', oldState.stave.index);
-		manager.setColor(oldState.note.on.index, 'black');
+		manager.setColor(oldState.note.on.index, '');
 		manager.renderSheet();
 	})
 	manager.on('leave_note', function (state, oldState) {
 		console.log('note leave', oldState.stave.index);
-		manager.setColor(oldState.note.on.index, 'black');
+		manager.setColor(oldState.note.on.index, '');
 		manager.renderSheet();
 	})
 	manager.on('input_state_change', function(state, oldState) {
@@ -380,12 +380,12 @@ function testMultiInsert(canvas, container) {
 	})
 	manager.on('leave_note', function (state, oldState) {
 		console.log('note leave', oldState.stave.index);
-		manager.setColor(oldState.note.on.index, 'black');
+		manager.setColor(oldState.note.on.index, '');
 		manager.renderSheet();
 	})
 	manager.on('leave_note', function (state, oldState) {
 		console.log('note leave', oldState.stave.index);
-		manager.setColor(oldState.note.on.index, 'black');
+		manager.setColor(oldState.note.on.index, '');
 		manager.renderSheet();
 	})
 	manager.on('input_state_change', function(state, oldState) {
@@ -429,12 +429,12 @@ function testRemoveNote(canvas, container) {
 	})
 	manager.on('leave_note', function (state, oldState) {
 		console.log('note leave', oldState.stave.index);
-		manager.setColor(oldState.note.on.index, 'black');
+		manager.setColor(oldState.note.on.index, '');
 		manager.renderSheet();
 	})
 	manager.on('leave_note', function (state, oldState) {
 		console.log('note leave', oldState.stave.index);
-		manager.setColor(oldState.note.on.index, 'black');
+		manager.setColor(oldState.note.on.index, '');
 		manager.renderSheet();
 	})
 	manager.on('input_state_change', function(state, oldState) {

@@ -109,7 +109,7 @@ EffectProcessor.noteEffectSets = [
 			if (datas[i] == null || "string" !== typeof datas[i]) return;
 		}
 	  indexes.forEach(function (index, order) {
-			sheetManager.setColor(index, datas[order]);
+			sheetManager.setColor(index, datas[order], true);
 	  })
 	}
 }
