@@ -285,7 +285,7 @@ MeasureManager.prototype.allStaves = function allMeasures() {
 MeasureManager.prototype.forEachTrack = function forEachTrack(cb) {
 	var i, j, index, item;
 	for (i = 0; i < this.tracks; i++) {
-		for (j = 0; j < this.tracks; j++) {
+		for (j = 0; j < this.measures; j++) {
 			index = [i, j];
 			item = this.staveByTrack(i, j);
 			cb.call(item, item, index);
