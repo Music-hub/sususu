@@ -161,7 +161,7 @@ EffectProcessor.measureEffectSets = [
 	},
 	// handler for stave connectors
 	{
-		preformat: function (sheetManager, sheet, type, id, indexes, items, datas) {
+		postformat: function (sheetManager, sheet, type, id, indexes, items, datas) {
 			if (type !== "stave_connector") return;
 			if (items.length < 1) return;
 			var firstStave, secondStave;
@@ -169,9 +169,45 @@ EffectProcessor.measureEffectSets = [
 			var info = datas[0];
 			firstStave = items[0]
 			secondStave =items[items.length - 1];
-					
+			
+			if (info.begBarType) {
+				items.forEach(function (item) {
+					item.setBegBarType(Vex.Flow.Barline.type[info.begBarType]);
+				})
+			}
+			if (info.endBarType) {
+				items.forEach(function (item) {
+					item.setEndBarType(Vex.Flow.Barline.type[info.endBarType]);
+				})
+			}
+			
       var connector = new Vex.Flow.StaveConnector(firstStave, secondStave);
       connector.setType(Vex.Flow.StaveConnector.type[info.type || "SINGLE"]);
+      
+			// some REALLY DIRTY HACK to fix align with repeat start....
+			if (info.begBarType === "REPEAT_BEGIN" && info.type === "BOLD_DOUBLE_LEFT") {
+				
+				var temp
+				var maxShiftX = firstStave.getModifierXShift();
+				
+				for (var i = 1; i < items.length; i++) {
+					temp = items[i].getModifierXShift();
+					console.log(temp, maxShiftX);
+					if (temp > maxShiftX) {
+						maxShiftX = temp;
+					}
+				}
+				for (var i = 0; i < items.length; i++) {
+					var offsetDiff = maxShiftX - items[i].getModifierXShift();
+					console.log(offsetDiff);
+					temp = items[i].modifiers[0].x
+					temp += offsetDiff;
+					items[i].modifiers[0].setX(temp);
+				}
+				
+				connector.setXShift(maxShiftX);
+				
+			}
       if (info.text) {
       	connector.setText(info.text);
       }

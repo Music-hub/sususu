@@ -2,6 +2,7 @@
 
 var count = 0;
 function runTest(name, test, discription) {
+	console.log("============== " + name + "==============");
 	var id = "test" + count;
 	count++;
 	var menuRow = $('<tr>').append(
@@ -46,6 +47,9 @@ function runTest(name, test, discription) {
 			$('<td>').text('success: ' + time + "ms")
 		)
 	}
+  wrapOut.append(
+    $('<a>').text('Back to Top').attr('href', '#top')
+  )
 }
 
 function getSheet () {
@@ -65,7 +69,7 @@ function getSheet () {
 			]),
 			Measure([], 3, 4),
 			Measure([], 4, 4, null, null, null, [
-				Effect('stave_connector', "5", {type: "BRACE", text: "aaaa", onEnd: false, all: true})
+				Effect('stave_connector', "5", {type: "BOLD_DOUBLE_LEFT", text: "aaaa", onEnd: false, all: true, begBarType: 'REPEAT_BEGIN', endBarType: 'REPEAT_END'})
 			])
 		],"treble", "C", [
 			Effect('stave_connector', "2", {type: "BRACKET", text: "violin", onEnd: false, all: false}),
@@ -88,7 +92,7 @@ function getSheet () {
 				Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false, all: false})
 			]),
 			Measure([], 4, 4, null, null, null, [
-				Effect('stave_connector', "5", {type: "BRACE", text: "aaaa", onEnd: false, all: true})
+				Effect('stave_connector', "5", {type: "BOLD_DOUBLE_LEFT", text: "aaaa", onEnd: false, all: true, begBarType: 'REPEAT_BEGIN', endBarType: 'REPEAT_END'})
 			])
 		], "treble", "G", [
 			Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false, all: false})
@@ -123,7 +127,7 @@ function getSheet () {
 				Note({ keys: ["b/4"], duration: "qr" }),
 				Note({ keys: ["c##/4", "e/4", "g/4"], duration: "q" })
 			], 4, 4, null, null, null, [
-				Effect('stave_connector', "5", {type: "BRACE", text: "aaaa", onEnd: false, all: true})
+				Effect('stave_connector', "5", {type: "BOLD_DOUBLE_LEFT", text: "aaaa", onEnd: false, all: true, begBarType: 'REPEAT_BEGIN', endBarType: 'REPEAT_END'})
 			]),
 			Measure([
 				Note({ keys: ["c/4"], duration: "8" }, [Effect('tuplet', "5")]),
@@ -476,16 +480,6 @@ function testRemoveTrack(canvas, container) {
 	manager.drawSheet();
 	console.log(manager)
 }
-function testRemoveTrack(canvas, container) {
-	var sheet = getSheet();
-	var manager = new SheetManager(canvas);
-	
-	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
-	manager.removeTrack(0, 1);
-	manager.setSheet();
-	manager.drawSheet();
-	console.log(manager)
-}
 function testRemoveTrack2(canvas, container) {
 	var sheet = getSheet();
 	var manager = new SheetManager(canvas);
@@ -571,6 +565,40 @@ function testGetEffects(canvas, container) {
 	manager.drawSheet();
 	console.log(manager)
 }
+function testConnector(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	var result = "";
+	var staveConnector = new Effect('stave_connector', Math.random(), {type: "BRACKET", text: "violin", onEnd: false, all: false});
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	
+	var effect = Effect('stave_connector', Math.random(), {
+		type: "BOLD_DOUBLE_LEFT",
+		all: true, 
+		begBarType: 'REPEAT_BEGIN', 
+		endBarType: null
+	})
+	var effect2 = Effect('stave_connector', Math.random(), {
+		type: "BOLD_DOUBLE_RIGHT",
+		all: true, 
+		begBarType: null, 
+		endBarType: 'REPEAT_END'
+	})
+	manager.addEffect([0,3], effect);
+	manager.addEffect([0,3], effect2);
+	manager.addEffect([1,3], effect);
+	manager.addEffect([1,3], effect2);
+	manager.addEffect([2,3], effect);
+	manager.addEffect([2,3], effect2);
+	
+	manager.removeEffect([0], 'stave_connector');
+	manager.removeEffect([1], 'stave_connector');
+	manager.removeEffect([2], 'stave_connector');
+	manager.setSheet();
+	
+	manager.drawSheet();
+	console.log(manager)
+}
 runTest('sheet draw', testSheet)
 runTest('another sheet draw', testSheet2);
 runTest('sheet draw - mobile layout', testSheetMobile);
@@ -591,3 +619,4 @@ runTest('test add effect', testAddEffect);
 runTest('test remove effect', testRemoveEffect);
 runTest('test add unique effect', testAddUniqueEffects);
 runTest('test get effects', testGetEffects);
+runTest('test connector', testConnector);
