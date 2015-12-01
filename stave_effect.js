@@ -198,11 +198,12 @@ EffectProcessor.measureEffectSets = [
 					}
 				}
 				for (var i = 0; i < items.length; i++) {
-					var offsetDiff = maxShiftX - items[i].getModifierXShift();
-					console.log(offsetDiff);
-					temp = items[i].modifiers[0].x
-					temp += offsetDiff;
-					items[i].modifiers[0].setX(temp);
+					// force the barline to draw at selected position
+					items[i].modifiers[0].draw = function (oldDraw, x_shift) {
+						return function (stave, _) {
+							oldDraw.call(this, stave, x_shift);
+						}
+					} (items[i].modifiers[0].draw, maxShiftX)
 				}
 				
 				connector.setXShift(maxShiftX);
