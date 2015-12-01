@@ -78,7 +78,7 @@
   				if (!effectMap[effect.type + '-' + effect.id]) {
   					effectMap[effect.type + '-' + effect.id] = {
   						type: effect.type,
-  						id: null,
+  						id: effect.id,
   						datas: [effect.data],
   						indexes: [index],
   						items: null

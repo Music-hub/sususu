@@ -337,7 +337,7 @@
   			if (!effectMap[effect.type + '-' + effect.id]) {
   				effectMap[effect.type + '-' + effect.id] = {
   					type: effect.type,
-  					id: null,
+  					id: effect.id,
   					datas: [effect.data],
   					indexes: [index],
   					items: [measureStave]
@@ -350,6 +350,7 @@
   			}
   		})
   	})
+  	console.log(effectMap, effectList)
   	this.measureEffectList = effectList;
   	this.options.effectProcessor.measure.preFormat(this, this.sheet, effectList);
   }
