@@ -1,4 +1,6 @@
 // methods to modify the sheet
+
+/* global SheetManager */
 ;(function (manager) {
   var fn = manager.fn
   /*

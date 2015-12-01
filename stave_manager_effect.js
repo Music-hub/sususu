@@ -1,6 +1,7 @@
 // methods to modify effects on the sheet
+/* global SheetManager */
 ;(function (manager) {
-    var fn = SheetManager.fn;
+    var fn = manager.fn;
   /*
    * note, measure, track effect related method
    */

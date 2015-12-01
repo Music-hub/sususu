@@ -1,4 +1,6 @@
 // methods to register and emit mouse(touch) events
+
+/* global SheetManager */
 ;(function (manager) {
     var fn = manager.fn;
   /*
