@@ -65,6 +65,7 @@
   			y: null
   		},
   		stave: {
+			  lineNumber: null,
   			index: null,
   			stave: null
   		},
@@ -143,19 +144,23 @@
   };
   // given x, y, find the stave under that position
   fn._findStave = function _findStave(x, y) {
-  	var i, j, box,
+  	var i, j, box, lineNumber, stave,
   	    tracks = this.staveBoundingBoxs.tracks,
   	    measures = this.staveBoundingBoxs.measures;
   	
   	for (var i = 0; i < tracks; i++) {
   		for (var j = 0; j < measures; j++) {
   			box = this.staveBoundingBoxs.staveByTrack(i, j);
-  			
   			if (x >= box.x && 
   				y >= box.y &&
   				x <= box.x + box.w &&
   				y <= box.y + box.h) {
+  				stave = this.staveTable.staveByTrack(i, j);
+  				
+  				lineNumber = Math.round(-(y - stave.getYForLine(4)) / stave.getSpacingBetweenLines() * 2);
+  				
   				return {
+  				  lineNumber: lineNumber,
   					index: [i, j],
   					stave: this.staveTable.staveByTrack(i, j)
   				}
