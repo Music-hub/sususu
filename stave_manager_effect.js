@@ -1,5 +1,9 @@
 // methods to modify effects on the sheet
 /* global SheetManager */
+
+/*
+ * emits: meta_update, measure_update
+ */
 ;(function (manager) {
     var fn = manager.fn;
   /*
@@ -150,6 +154,7 @@
   fn.addNoteEffect = function addNoteEffect(index, effect) {
   	try {
   		this.sheet.tracks[index[0]].measures[index[1]].notes[index[2]].info.effects.push(effect);
+  		this.emit('measure_update', index, this.getMeasure(index.slice(0, 2)))
   	} catch (e) {
   		this.emit('error', new Error('error addNoteEffect: ' + e.toString()));
   	}
@@ -157,6 +162,7 @@
   fn.addMeasureEffect = function addMeasureEffect(index, effect) {
   	try {
   		this.sheet.tracks[index[0]].measures[index[1]].info.effects.push(effect);
+  		this.emit('measure_update', index, this.getMeasure(index))
   	} catch (e) {
   		this.emit('error', new Error('error addNoteEffect: ' + e.toString()));
   	}
@@ -164,6 +170,7 @@
   fn.addTrackEffect = function addTrackEffect(index, effect) {
   	try {
   		this.sheet.tracks[index[0]].info.effects.push(effect);
+  		this.emit('meta_update', index, this.getInfo(index));
   	} catch (e) {
   		this.emit('error', new Error('error addNoteEffect: ' + e.toString()));
   	}
@@ -190,6 +197,7 @@
   				effectList.splice(i, 1);
   			}
   		}
+  		this.emit('measure_update', index, this.getMeasure(index.slice(0, 2)))
   	} catch (e) {
   		this.emit('error', new Error('error removeNoteEffect: ' + e.toString()));
   	}
@@ -208,6 +216,7 @@
   				effectList.splice(i, 1);
   			}
   		}
+  		this.emit('measure_update', index, this.getMeasure(index.slice(0, 2)))
   	} catch (e) {
   		this.emit('error', new Error('error removeNoteEffect: ' + e.toString()));
   	}
@@ -226,6 +235,7 @@
   				effectList.splice(i, 1);
   			}
   		}
+  		this.emit('meta_update', index, this.getInfo(index));
   	} catch (e) {
   		this.emit('error', new Error('error removeNoteEffect: ' + e.toString()));
   	}
