@@ -149,6 +149,11 @@ SheetManager.prototype.setSheet = function setSheet(sheet, options) {
 	this.staveTable = new MeasureManager (tracks, measures, this.options.cols);
 }
 
+// get a sheet clone back from manager
+SheetManager.prototype.getSheet = function getSheet(sheet, options) {
+	return this.sheet ? this.sheet.clone() : null;
+}
+
 // format the sheet and init all vex notes and stave
 SheetManager.prototype.preDrawSheet = function preDrawSheet() {
 	this.createStave();
