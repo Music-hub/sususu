@@ -1,4 +1,13 @@
 /* global Sheet, Channel, Measure, Note, Effect, SheetManager */
+function assert(condition, message) {
+    if (!condition) {
+        message = message || "Assertion failed";
+        if (typeof Error !== "undefined") {
+            throw new Error(message);
+        }
+        throw message; // Fallback
+    }
+}
 
 var count = 0;
 function runTest(name, test, discription) {
@@ -94,7 +103,7 @@ function getSheet () {
 			Measure([], 4, 4, null, null, null, [
 				Effect('stave_connector', "5", {type: "BOLD_DOUBLE_LEFT", text: "aaaa", onEnd: false, all: true, begBarType: 'REPEAT_BEGIN', endBarType: 'REPEAT_END'})
 			])
-		], "treble", "G", [
+		], "treble", "Cb", [
 			Effect('stave_connector', "1", {type: "BRACE", text: "piano", onEnd: false, all: false})
 		]),
 		Channel([
@@ -269,6 +278,7 @@ function testEvent(canvas, container) {
 	var textBoard = $('<pre>').appendTo(container).css('height', '400px').css('text-align', 'left');
 	manager.on('mousemove', function (state) {
 		textBoard.text(JSON.stringify({
+			line: state.stave.lineNumber,
 			stave: state.stave.index,
 			noteOn: state.note.on.index,
 			notePre: state.note.between.pre.index,
@@ -584,12 +594,22 @@ function testConnector(canvas, container) {
 		begBarType: null, 
 		endBarType: 'REPEAT_END'
 	})
+	var effect3 = Effect('stave_connector', Math.random(), {
+		type: "BOLD_DOUBLE_LEFT",
+		all: true, 
+		begBarType: 'REPEAT_BEGIN', 
+		endBarType: null
+	})
 	manager.addEffect([0,3], effect);
 	manager.addEffect([0,3], effect2);
 	manager.addEffect([1,3], effect);
 	manager.addEffect([1,3], effect2);
 	manager.addEffect([2,3], effect);
 	manager.addEffect([2,3], effect2);
+	
+	manager.addEffect([0,4], effect3);
+	manager.addEffect([1,4], effect3);
+	manager.addEffect([2,4], effect3);
 	
 	manager.removeEffect([0], 'stave_connector');
 	manager.removeEffect([1], 'stave_connector');
@@ -598,6 +618,110 @@ function testConnector(canvas, container) {
 	
 	manager.drawSheet();
 	console.log(manager)
+}
+function testGetEffects(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	var result = "";
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	manager.drawSheet();
+	assert(Array.isArray(manager.getEffectSet(1)));
+	assert(Array.isArray(manager.getEffectSet(2)));
+	assert(Array.isArray(manager.getEffectSet(3)));
+	assert(manager.findWithEffect(1, 'stave_connector').length > 0);
+	assert(manager.findWithEffect(1, 'fdgfxdgg').length === 0);
+	assert(manager.findWithEffect(2, 'stave_connector').length > 0);
+	assert(manager.findWithEffect(2, 'fdgfxdgg').length === 0);
+	assert(manager.findWithEffect(3, 'tie').length > 0);
+	assert(manager.findWithEffect(2, 'fdgfxdgg').length === 0);
+	$(container).hide();
+}
+function testGetSheet(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	var result = "";
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	manager.drawSheet();
+	assert(manager.getSheet() != null);
+	console.log(manager.getSheet(), JSON.stringify(manager.getSheet().toObject()).length);
+	$(container).hide();
+}
+function testLineNumber(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	
+	manager.setSheet(sheet, {cols: 3, width: 1000});
+	
+	
+	manager.preDrawSheet();
+	manager.renderSheet();
+	
+	manager.initEvent();
+	
+	console.log(manager)
+	
+	var textBoard = $('<pre>').appendTo(container).css('height', '400px').css('text-align', 'left');
+	manager.on('mousemove', function (state) {
+		var keySignature, lineNumber, clef, pitch;
+		if (state.stave.index) {
+			keySignature = manager.sheet.tracks[state.stave.index[0]].info.keySignature;
+			clef = manager.sheet.tracks[state.stave.index[0]].info.clef;
+			lineNumber = state.stave.lineNumber;
+			pitch = manager.getPitch(lineNumber, clef, keySignature);
+		}
+		textBoard.text(JSON.stringify({
+			pitch: pitch,
+			line: state.stave.lineNumber,
+			stave: state.stave.index,
+			noteOn: state.note.on.index,
+			notePre: state.note.between.pre.index,
+			notePost: state.note.between.post.index
+		}, 0, 4))
+	})
+	
+	manager.on('click_note', function (state) {
+		console.log('note', state.note.on.index);
+		manager.removeNote(state.note.on.index);
+		manager.setSheet();
+		manager.drawSheet();
+	})
+	manager.on('click_stave', function (state) {
+		var target, note;
+		var keySignature, lineNumber, clef, pitch;
+		console.log('stave', state.stave.index);
+		if (!state.note.on.index) {
+			keySignature = manager.sheet.tracks[state.stave.index[0]].info.keySignature;
+			clef = manager.sheet.tracks[state.stave.index[0]].info.clef;
+			lineNumber = state.stave.lineNumber;
+			pitch = manager.getPitch(lineNumber, clef, keySignature);
+			note = Note({ keys: [pitch.pitch + '/' + pitch.octave], duration: "8" })
+			if (state.note.between.post.index) {
+				target = state.note.between.post.index.concat([]);
+			} else if (state.note.between.pre.index) {
+				target = state.note.between.pre.index.concat([]);
+				target[2] += 1
+			} else {
+				target = state.stave.index.concat([0]);
+			}
+			manager.addNote(target, note);
+			try {
+				manager.setSheet();
+				manager.drawSheet();
+			} catch (e) {
+				console.error(e);
+			}
+		}
+	})
+	manager.on('hover_note', function (state) {
+		console.log('note hover', state.stave.index);
+		manager.setColor(state.note.on.index, 'blue');
+		manager.renderSheet();
+	})
+	manager.on('leave_note', function (state, oldState) {
+		console.log('note leave', oldState.stave.index);
+		manager.setColor(oldState.note.on.index, '');
+		manager.renderSheet();
+	})
 }
 runTest('sheet draw', testSheet)
 runTest('another sheet draw', testSheet2);
@@ -620,3 +744,6 @@ runTest('test remove effect', testRemoveEffect);
 runTest('test add unique effect', testAddUniqueEffects);
 runTest('test get effects', testGetEffects);
 runTest('test connector', testConnector);
+runTest('test find and get effect', testGetEffects);
+runTest('test get sheet', testGetSheet);
+runTest('test get line number', testLineNumber);
