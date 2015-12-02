@@ -231,6 +231,10 @@
   	}
   }
   // same as addEffect, but remove old effect if there is already effect in same type.
+  fn.addUniqueEffect = function addUniqueEffect(index, effect) {
+  	this.removeEffect(index, effect.type);
+  	this.addEffect(index, effect);
+  }
   fn.getEffect = function getEffect(index) {
   	try {
   		switch (index.length) {
@@ -245,9 +249,37 @@
   	}
   	return false;
   }
-  fn.addUniqueEffect = function addUniqueEffect(index, effect) {
-  	this.removeEffect(index, effect.type);
-  	this.addEffect(index, effect);
+  /*
+   * method to search item with effect (or also with id)
+   * Number indexDepth: search in where, 1 for track, 2 for measure, 3 for note
+   * returns [effectSet]
+   */
+  fn.findWithEffect = function findWithEffect(indexDepth, type, id) {
+    var allSets, results = [];
+    switch (indexDepth) {
+      case 1: allSets = this.trackEffectList; break;
+      case 2: allSets = this.measureEffectList; break;
+      case 3: allSets = this.noteEffectList; break;
+      default:
+        this.emit('error', new Error('unknown index depth: ' + indexDepth));
+        return null
+    }
+    return allSets.filter(function (set) {
+      if (set.type !== type) return false;
+      if (id != null && set.id !== id) return false;
+      return true;
+    })
   }
-
+  fn.getEffectSet = function findWithEffect(indexDepth) {
+    var allSets, results = [];
+    switch (indexDepth) {
+      case 1: allSets = this.trackEffectList; break;
+      case 2: allSets = this.measureEffectList; break;
+      case 3: allSets = this.noteEffectList; break;
+      default: 
+        this.emit('error', new Error('unknown index depth: ' + indexDepth));
+        return null
+    }
+    return allSets;
+  }
 } (SheetManager));
