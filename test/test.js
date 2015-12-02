@@ -723,6 +723,111 @@ function testLineNumber(canvas, container) {
 		manager.renderSheet();
 	})
 }
+function testGetAndSetMeasure(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	var result = "";
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	var measure = manager.getMeasure([0, 0]);
+	assert(measure != null);
+	manager.setMeasure([0, 1], measure);
+	manager.setMeasure([1, 2], measure);
+	manager.drawSheet();
+}
+function testGetAndSetMetaData(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	var info = manager.getInfo([0]);
+	assert(info != null);
+	manager.setInfo([1], info);
+	manager.setInfo([2], info);
+	manager.drawSheet();
+}
+function testEditEvents(canvas, container) {
+	var sheet = getSheet();
+	var manager = new SheetManager(canvas);
+	var index = null;
+	var result = null;
+	var clearTemp = function () {
+		index = null;
+		result = null;
+	}
+	var validateLayoutUpdate = function () {
+		console.log(index, result);
+		assert(index === null && (result instanceof Sheet));
+		clearTemp()
+	}
+	var validateMeasureUpdate = function () {
+		console.log(index, result);
+		assert(index.length === 2 && (result instanceof Measure));
+		clearTemp()
+	}
+	var validateMetaUpdate = function () {
+		console.log(index, result);
+		assert(index.length === 1 && ('object' === typeof result));
+		clearTemp()
+	}
+	var validateNoUpdate = function () {
+		console.log(index, result);
+		assert(index === null && result === null);
+		clearTemp()
+	}
+	manager.on('layout_update', function (sheet) {
+		result = sheet;
+	})
+	manager.on('measure_update', function (i, measure) {
+		index = i;
+		result = measure;
+	})
+	manager.on('meta_update', function (i, info) {
+		index = i;
+		result = info;
+	})
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	
+	manager.addNote([0, 1], new Note({keys: ["c/4"], duration: "8" }));
+	manager.drawSheet();
+	validateMeasureUpdate();
+	
+	manager.removeNote([0, 0, 0]);
+	manager.drawSheet();
+	validateMeasureUpdate();
+	
+	manager.removeTrack(0, 1);
+	manager.setSheet();
+	manager.drawSheet();
+	validateLayoutUpdate();
+	
+	manager.setMeasureLength(4);
+	manager.setSheet();
+	manager.drawSheet();
+	validateLayoutUpdate();
+	
+	manager.setMeasureLength(6);
+	manager.setSheet();
+	manager.drawSheet();
+	validateLayoutUpdate();
+	
+	var temp;
+	temp = manager.getMeasure([0, 0]);
+	manager.setMeasure([0, 1], temp, true);
+	validateNoUpdate();
+	
+	manager.setMeasure([0, 2], temp);
+	validateMeasureUpdate();
+	
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	var info = manager.getInfo([0]);
+	
+	manager.setInfo([1], info, true);
+	validateNoUpdate();
+	manager.setInfo([1], info);
+	validateMetaUpdate();
+	
+	manager.drawSheet();
+}
+
 runTest('sheet draw', testSheet)
 runTest('another sheet draw', testSheet2);
 runTest('sheet draw - mobile layout', testSheetMobile);
@@ -747,3 +852,6 @@ runTest('test connector', testConnector);
 runTest('test find and get effect', testGetEffects);
 runTest('test get sheet', testGetSheet);
 runTest('test get line number', testLineNumber);
+runTest('test get and set measure', testGetAndSetMeasure);
+runTest('test get and set metadata', testGetAndSetMetaData);
+runTest('test edit events', testEditEvents);
