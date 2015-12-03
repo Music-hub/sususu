@@ -71,7 +71,7 @@ $(document).ready(function() {
           
     	var manager = new SheetManager(canvas);
     	
-    	manager.setSheet(sheet, {cols: 3, width: 980});
+    	manager.setSheet(sheet, {cols: 3, width: 920});
     	
     	manager.drawSheet();
     	console.log(manager)
@@ -89,6 +89,7 @@ $(document).ready(function() {
 	      }, 500);
 	    })
 	    
+	    startEditor(manager, sheetId);
       
     });
   });
@@ -109,3 +110,104 @@ $('.accordion')
     }
   })
 ;
+
+
+$('#clone').click(function () {
+  if (!location.pathname.match(/\/editor\/[A-Za-z0-9\-]+\/?/)) return;
+  var sheetId = /\/editor\/([A-Za-z0-9\-]+)\/?/.exec(location.pathname)[1];
+  var cloneApi = "/api/sheet/clone/"
+  $.get(cloneApi + sheetId, function (ev) {
+    if (ev.level === "success") {
+      location.href = "/editor/" + ev.data._id;
+    }
+  })
+})
+
+function startEditor(manager, sheetId) {
+  var currentDuration = "4";
+  var silented = "";
+  
+  manager.initEvent();
+	manager.on('hover_note', function (state) {
+		console.log('note hover', state.stave.index);
+		manager.setColor(state.note.on.index, 'blue');
+		manager.renderSheet();
+	})
+	manager.on('leave_note', function (state, oldState) {
+		console.log('note leave', oldState.stave.index);
+		manager.setColor(oldState.note.on.index, '');
+		manager.renderSheet();
+	})
+	manager.on('click_stave', function (state) {
+		var target, note;
+		var keySignature, lineNumber, clef, pitch, index;
+		console.log('stave', state.stave.index);
+		if (!state.note.on.index) {
+		  index = [state.stave.index[0]]
+			keySignature = manager.getInfo(index).keySignature;
+			clef = manager.getInfo(index).clef;
+			lineNumber = state.stave.lineNumber;
+			pitch = manager.getPitch(lineNumber, clef, keySignature);
+			note = Note({ keys: [pitch.pitch + '/' + pitch.octave], duration: currentDuration + silented })
+			if (state.note.between.post.index) {
+				target = state.note.between.post.index.concat([]);
+			} else if (state.note.between.pre.index) {
+				target = state.note.between.pre.index.concat([]);
+				target[2] += 1
+			} else {
+				target = state.stave.index.concat([0]);
+			}
+			manager.addNote(target, note);
+			manager.setSheet();
+			manager.drawSheet();
+		}
+	})
+	manager.on('click_note', function (state) {
+		console.log('note', state.note.on.index);
+		manager.removeNote(state.note.on.index);
+		manager.setSheet();
+		manager.drawSheet();
+	})
+	
+  var socket = io('/sheet');
+  socket.emit('join', sheetId);
+  
+  manager.on('layout_update', function (sheet) {
+    socket.emit('layout_update', sheet.toObject());
+  })
+  manager.on('measure_update', function (index, measure) {
+    socket.emit('measure_update', index, measure.toObject());
+  })
+  manager.on('meta_update', function (index, info) {
+    socket.emit('meta_update', index, info);
+  })
+  
+  socket.on('layout_update', function (sheet) {
+    console.log('layout_update')
+    sheet = Sheet.fromObject(sheet);
+    manager.setSheet(sheet);
+    manager.drawSheet();
+  })
+  socket.on('measure_update', function (index, measure) {
+    console.log('measure_update')
+    measure = Measure.fromObject(measure);
+    manager.setMeasure(index, measure, true);
+    manager.setSheet();
+    manager.drawSheet();
+  })
+  socket.on('meta_update', function (index, info) {
+    console.log('meta_update')
+    manager.setInfo(index, info, true);
+    manager.setSheet();
+    manager.drawSheet();
+  })
+  
+  $("button[data-role='duration']").on('click', function () {
+    $("button[data-role='duration']").removeClass('active');
+    $(this).addClass('active');
+    currentDuration = $(this).attr('data-value');
+  })
+  $("button[data-role='silent']").on('click', function () {
+    silented = $(this).hasClass('active') ? "r" : "";
+  })
+}
