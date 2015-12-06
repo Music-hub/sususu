@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+    
+    <head>
+        <meta charset="utf-8">
+        <title>Sheet Music</title>
+        <link rel="stylesheet" type="text/css" href="semantic/out/semantic.min.css"/>
+        <link rel="stylesheet" type="text/css" href="Editor.css"/>
+        <link rel="stylesheet" type="text/css" href="node_modules/semantic-ui-icon/icon.min.css"/>
+        <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+    </head>
+    
+    <body>
+        
+        
+        
+        <nav>
+          <div class="ui teal inverted top fixed menu" id="nav">
+            <div class="header item headposition">Musichub</div>
+            <div class="item">
+              <div class="ui icon input">
+                <input placeholder="Search..." type="text">
+                <i class="search icon"></i>
+              </div>
+             </div>
+            <div class="right menu rightmenuposition">
+              <a href="#"  onclick="handler()"  class="item">  
+                <i class="edit icon"></i>Edit
+              </a>   
+              <div class="ui dropdown item">Setting
+                <i class="dropdown icon"></i>
+                <div class="menu">
+                  <div class="item">example</div>
+                  <div class="item">example</div>
+                  <div class="item">example</div>
+                </div>
+              </div>
+              <a class="ui item">登出 </a>
+            </div>
+          </div>
+        </nav>
+        
+        
+        <div class="ui large vertical menu" id="toolbar">
+          <div class="ui styled accordion">
+          <div class="active title"><i class="music icon"></i> Note </div>
+          <div class="content">
+            
+            <div class="column">
+                <button id="one" class="ui button" data-role="duration" data-value="1">w</button>
+                <button id="two" class="ui button" data-role="duration" data-value="2">h</button>
+                <button id="four" class="ui button active" data-role="duration" data-value="4">q</button>
+                <button id="eig" class="ui button" data-role="duration" data-value="8">e</button>
+            </div>
+            
+            <div class="column">
+                <button id="six" class="ui button" data-role="duration" data-value="16">s</button>      
+                <button id="tri" class="ui button" data-role="duration" data-value="3">T</button>
+                <button id="six" class="ui button" data-role="duration" data-value="16">s</button>
+                
+            </div>
+            
+            <div class="ui divider"></div>
+              
+            <div class="column">
+                <button id="stop1" class="ui button" data-role="other" data-value="stop1">W</button>
+                <button id="stop2" class="ui button" data-role="other" data-value="stop2">H</button>
+                <button id="stop4" class="ui button" data-role="other" data-value="stop4">Q</button>
+                <button id="stop8" class="ui button" data-role="other" data-value="stop8">E</button>
+            </div>
+              
+            <div class="column">
+                <button id="stop16" class="ui button" data-role="other" data-value="stop16">S</button>    
+            </div>
+              
+            <div class="ui divider"></div>
+              
+            <div class="column">
+                <button id="sharp" class="ui button" data-role="other" data-value="sharp">B</button>
+                <button id="drop" class="ui button" data-role="other" data-value="drop">b</button>
+                <button id="dot" class="ui button" data-role="other" data-value="dot">.</button> 
+                <button id="conn" class="ui button" data-role="other" data-value="conn">U</button>
+            </div>
+            <div class="column">
+                <button id="tempo" class="ui button" data-role="other">}</button>    
+                <button id="pitch" class="ui button" data-role="other">}</button>    
+                <button id="re1" class="ui button" data-role="other" data-value="re1">$</button>
+                <button id="re2" class="ui button" data-role="other" data-value="re2">G</button>
+            </div>
+          </div>
+              <div class="title"><h id=chord>Ï</h> Chord </div>
+          <div class="active content">
+              <div class="column">
+                <button class="ui button" data-role="chord">C7</button>
+                <button class="ui button" data-role="chord">Cmaj7</button>
+                <button class="ui button" data-role="chord">Cm7</button>
+              </div>
+              <div class="column">
+                <button class="ui button" data-role="chord">Cm7-5</button>
+                <button class="ui button" data-role="chord">Csus4</button>
+                <button class="ui button" data-role="chord">Caug7</button>
+              </div>
+              <div class="column">
+                <button id="add_chord" class="ui button " data-role="add"><i class="large add icon"></i></button>
+              </div>
+          </div>
+          <div class="title"><i class="clockwise rotated options icon"></i> Tone </div>
+          <div class="content">
+              <div class="column">
+                <button class="ui button" data-role="tone">Amp1</button>
+                <button class="ui button" data-role="tone">Amp2</button>
+                <button class="ui button" data-role="tone">Amp3</button>
+              </div>
+              <div class="column">
+                <button class="ui button" data-role="tone">Amp4</button>
+                <button id="add_amp" class="ui button " data-role="add"><i class="large add icon"></i></button>
+              </div>
+          </div>
+            </div>
+        </div>
+        
+        <div class="ui small modal">
+          <i class="close icon"></i>
+          <div class="header">Chord</div>
+          
+          <div class="actions">
+            <div id="modal_button" class="ui button">Add</div>
+            <div id="modal_button" class="ui button">Cancle</div>
+          </div>
+        </div>
+        
+        <div id="edit">
+            <section id="description" class="write">
+                <h1>Description</h1>
+                <p>Musichub is a platform for sharing music sheet.</p>
+                <p>You can view other's collection online.</p>
+                <p>Moreover, you can co-edit the sheet to make it better!</p>
+            </section>  
+      
+        </div>
+        
+        <script src="semantic/out/semantic.min.js"></script>
+        <script src="Editor.js"></script>
+
+    </body>
+    
+</html>
+
