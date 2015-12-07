@@ -7,7 +7,7 @@
         <title>Sheet Music</title>
         <link rel="stylesheet" type="text/css" href="semantic/out/semantic.min.css"/>
         <link rel="stylesheet" type="text/css" href="Editor.css"/>
-        <link rel="stylesheet" type="text/css" href="node_modules/semantic-ui-icon/icon.min.css"/>
+        <link rel="stylesheet" type="text/css" href="semantic-ui-icon/icon.min.css"/>
         <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
     </head>
     
@@ -25,6 +25,9 @@
               </div>
              </div>
             <div class="right menu rightmenuposition">
+              <a href="#" id="clone" class="item">  
+                Clone
+              </a>   
               <a href="#"  onclick="handler()"  class="item">  
                 <i class="edit icon"></i>Edit
               </a>   
@@ -56,22 +59,22 @@
             
             <div class="column">
                 <button id="six" class="ui button" data-role="duration" data-value="16">s</button>      
-                <button id="tri" class="ui button" data-role="duration" data-value="3">T</button>
-                <button id="six" class="ui button" data-role="duration" data-value="16">s</button>
+                <button id="tri" class="ui button" data-role="other" data-value="3">T</button> 
+                <!--<button id="six" class="ui button" data-role="duration" data-value="16">s</button>-->
                 
             </div>
             
             <div class="ui divider"></div>
               
             <div class="column">
-                <button id="stop1" class="ui button" data-role="other" data-value="stop1">W</button>
-                <button id="stop2" class="ui button" data-role="other" data-value="stop2">H</button>
-                <button id="stop4" class="ui button" data-role="other" data-value="stop4">Q</button>
-                <button id="stop8" class="ui button" data-role="other" data-value="stop8">E</button>
+                <button id="stop1" class="ui button" data-role="duration" data-value="1r">W</button>
+                <button id="stop2" class="ui button" data-role="duration" data-value="2r">H</button>
+                <button id="stop4" class="ui button" data-role="duration" data-value="4r">Q</button>
+                <button id="stop8" class="ui button" data-role="duration" data-value="8r">E</button>
             </div>
               
             <div class="column">
-                <button id="stop16" class="ui button" data-role="other" data-value="stop16">S</button>    
+                <button id="stop16" class="ui button" data-role="duration" data-value="16r">S</button>    
             </div>
               
             <div class="ui divider"></div>
@@ -141,6 +144,21 @@
         </div>
         
         <script src="semantic/out/semantic.min.js"></script>
+        <script src="/components/vexflow/releases/vexflow-debug.js"></script>
+		    <script src="/components/eventEmitter/EventEmitter.js"></script>
+    		    
+        <script src="stave_manager.js"></script>
+        <script src="stave_manager_render.js"></script>
+        <script src="stave_manager_bounding_box.js"></script>
+        <script src="stave_manager_effect.js"></script>
+        <script src="stave_manager_mouse_event.js"></script>
+        <script src="stave_manager_edit.js"></script>
+        <script src="stave_manager_color.js"></script>
+        <script src="stave_manager_table.js"></script>
+        <script src="stave_effect.js"></script>
+        <script src="stave_formats.js"></script>
+        
+        <script src="/socket.io/socket.io.js"></script>
         <script src="Editor.js"></script>
 
     </body>
