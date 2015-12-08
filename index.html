@@ -47,7 +47,7 @@
         
         <div class="ui large vertical menu" id="toolbar">
           <div class="ui styled accordion">
-          <div class="active title"><i class="music icon"></i> Note </div>
+          <div class="title"><i class="music icon"></i> Note </div>
           <div class="content">
             
             <div class="column">
@@ -59,7 +59,6 @@
             
             <div class="column">
                 <button id="six" class="ui button" data-role="duration" data-value="16">s</button>      
-                <button id="tri" class="ui button" data-role="other" data-value="3">T</button> 
                 <!--<button id="six" class="ui button" data-role="duration" data-value="16">s</button>-->
                 
             </div>
@@ -80,47 +79,78 @@
             <div class="ui divider"></div>
               
             <div class="column">
-                <button id="sharp" class="ui button" data-role="other" data-value="sharp">B</button>
-                <button id="drop" class="ui button" data-role="other" data-value="drop">b</button>
-                <button id="dot" class="ui button" data-role="other" data-value="dot">.</button> 
-                <button id="conn" class="ui button" data-role="other" data-value="conn">U</button>
+                <button id="tri" class="remove ui button active" data-role="note-action" data-value="remove-note">q</button>
+                <button id="tri" class="ui button" data-role="note-action" data-value="add-tuplet">T</button>
+                <button id="tri" class="remove ui button" data-role="note-action" data-value="remove-tuplet">T</button>
+                <button id="sharp" class="ui button disabled" data-role="other" data-value="sharp">B</button>
+                <button id="drop" class="ui button disabled" data-role="other" data-value="drop">b</button>
+                <button id="dot" class="ui button disabled" data-role="other" data-value="dot">.</button> 
+                <button id="conn" class="ui button disabled" data-role="other" data-value="conn">U</button>
             </div>
             <div class="column">
-                <button id="tempo" class="ui button" data-role="other">}</button>    
-                <button id="pitch" class="ui button" data-role="other">}</button>    
-                <button id="re1" class="ui button" data-role="other" data-value="re1">$</button>
-                <button id="re2" class="ui button" data-role="other" data-value="re2">G</button>
+                <button id="tempo" class="ui button disabled" data-role="other">}</button>    
+                <button id="pitch" class="ui button disabled" data-role="other">}</button>    
+                <button id="re1" class="ui button disabled" data-role="other" data-value="re1">$</button>
+                <button id="re2" class="ui button disabled" data-role="other" data-value="re2">G</button>
             </div>
           </div>
-              <div class="title"><h id=chord>Ï</h> Chord </div>
-          <div class="active content">
-              <div class="column">
-                <button class="ui button" data-role="chord">C7</button>
-                <button class="ui button" data-role="chord">Cmaj7</button>
-                <button class="ui button" data-role="chord">Cm7</button>
-              </div>
-              <div class="column">
-                <button class="ui button" data-role="chord">Cm7-5</button>
-                <button class="ui button" data-role="chord">Csus4</button>
-                <button class="ui button" data-role="chord">Caug7</button>
-              </div>
-              <div class="column">
-                <button id="add_chord" class="ui button " data-role="add"><i class="large add icon"></i></button>
-              </div>
-          </div>
-          <div class="title"><i class="clockwise rotated options icon"></i> Tone </div>
+          <div class="title"><h id=chord>Ï</h>Chord </div>
           <div class="content">
               <div class="column">
-                <button class="ui button" data-role="tone">Amp1</button>
-                <button class="ui button" data-role="tone">Amp2</button>
-                <button class="ui button" data-role="tone">Amp3</button>
+                <button class="ui button disabled" data-role="chord">C7</button>
+                <button class="ui button disabled" data-role="chord">Cmaj7</button>
+                <button class="ui button disabled" data-role="chord">Cm7</button>
               </div>
               <div class="column">
-                <button class="ui button" data-role="tone">Amp4</button>
-                <button id="add_amp" class="ui button " data-role="add"><i class="large add icon"></i></button>
+                <button class="ui button disabled" data-role="chord">Cm7-5</button>
+                <button class="ui button disabled" data-role="chord">Csus4</button>
+                <button class="ui button disabled" data-role="chord">Caug7</button>
+              </div>
+              <div class="column">
+                <button id="add_chord" class="ui button disabled" data-role="add"><i class="large add icon"></i></button>
               </div>
           </div>
-            </div>
+          <div class="title"><i class="clockwise rotated options icon"></i>Tone </div>
+          <div class="content">
+              <div class="column">
+                <button class="ui button disabled" data-role="tone">Amp1</button>
+                <button class="ui button disabled" data-role="tone">Amp2</button>
+                <button class="ui button disabled" data-role="tone">Amp3</button>
+              </div>
+              <div class="column">
+                <button class="ui button disabled" data-role="tone">Amp4</button>
+                <button id="add_amp" class="ui button disabled" data-role="add"><i class="large add icon"></i></button>
+              </div>
+          </div>
+          <div class="title">Other... </div>
+          <div class="content">
+              <div class="column">
+                <h3>Tracks</h3>
+              </div>
+              <div class="column">
+                <button id="track-add" class="ui button">add</button> <button id="track-remove"class="ui button">remove</button>
+              </div>
+              <div class="column">
+                <h3>Measures</h3>
+              </div>
+              <div class="column">
+                <input id="measure-length" type="number"> <button id="measure-length-set"class="ui button">Set</button>
+              </div>
+          </div>
+          <div class="title"><i class="share alternate icon"></i>Share</div>
+          <div class="content share">
+              <div class="column">
+                <h3>Short Link:</h3>
+                <div class="ui input">
+                  <input onClick="this.select();" id="short-link" type="text" placeholder="loading..." readonly>
+                </div>
+              </div>
+              <div class="column">
+                <h3>QRCode:</h3>
+                <dic id="short-link-qrcode" style="display: inline-block;"></dic>
+              </div>
+          </div>
+          </div>
         </div>
         
         <div class="ui small modal">
@@ -146,6 +176,7 @@
         <script src="semantic/out/semantic.min.js"></script>
         <script src="/components/vexflow/releases/vexflow-debug.js"></script>
 		    <script src="/components/eventEmitter/EventEmitter.js"></script>
+		    <script src="/components/qrcode.js/qrcode.js"></script>
     		    
         <script src="stave_manager.js"></script>
         <script src="stave_manager_render.js"></script>

@@ -42,6 +42,19 @@ $('.accordion')
     var selectedRevision = sheet.revisions[sheet.revisions.length - 1];
     var revisionId = selectedRevision._id;
     
+    if (sheet.shortLink) {
+      $('#short-link').val(sheet.shortLink)
+      
+      var qrcode = new QRCode(document.getElementById("short-link-qrcode"), {
+          text: sheet.shortLink,
+          width: 200,
+          height: 200,
+          colorDark : "#000000",
+          colorLight : "#ffffff",
+          correctLevel : QRCode.CorrectLevel.M
+      });
+    }
+    
     $.get(siteBase + revisionAPIPath + revisionId, function (ev) {
       console.log(ev);
       var revision = ev.data;
@@ -66,6 +79,7 @@ $('.accordion')
 	      height: height + 'px',
 	      width: width + 'px'
 	    }, 500, function () {
+	      $('#edit').css('height', 'auto');
 	      $canvas.css('opacity', '0')
 	      $(this).html('').append($canvas);
 	      $canvas.animate({
@@ -80,6 +94,68 @@ $('.accordion')
   
 }());
 
+function Selector (fulfill) {
+  this.fulfill = fulfill;
+  EventEmitter.call(this);
+  this.selected = [];
+}
+
+inherits(Selector, EventEmitter);
+
+Selector.prototype.isSelected = function (index) {
+  var i, oldItem;
+  for (i = this.selected.length - 1; i >= 0; i--) {
+    oldItem = this.selected[i];
+    if (JSON.stringify(index) === JSON.stringify(oldItem.index)) {
+      return true
+    }
+  }
+  return false;
+}
+Selector.prototype.addSelect = function (index, data) {
+  var dup = false;
+  this.selected.forEach(function (oldItem) {
+    if (JSON.stringify(index) === JSON.stringify(oldItem.index)) {
+      dup = true;
+    }
+  })
+  if (dup) return;
+  var item = {
+    index : index,
+    data : data
+  }
+  this.selected.push(item);
+  this.emit('select', item);
+  if (this.fulfill === this.selected.length) {
+    this.emit('fulfill', this.selected);
+  }
+}
+
+Selector.prototype.reSelectAll = function () {
+  var i;
+  for (i = this.selected.length - 1; i >= 0; i--) {
+    this.emit('select', this.selected[i]);
+  }
+}
+Selector.prototype.deSelect = function (index, noevent) {
+  var itemIndex = -1;
+  this.selected.forEach(function (oldItem, i) {
+    if (JSON.stringify(index) === JSON.stringify(oldItem.index)) {
+      itemIndex = i;
+    }
+  })
+  if (itemIndex < 0) return;
+  var removeed = this.selected[itemIndex];
+  this.selected.splice(itemIndex, 1);
+  if (!noevent) this.emit('deselect', removeed);
+}
+
+Selector.prototype.deSelectAll = function (noevent) {
+  var i;
+  for (i = this.selected.length - 1; i >= 0; i--) {
+    this.deSelect(this.selected[i].index, noevent);
+  }
+}
 
 $('#clone').click(function () {
   if (!location.pathname.match(/\/editor\/[A-Za-z0-9\-]+\/?/)) return;
@@ -95,15 +171,72 @@ $('#clone').click(function () {
 function startEditor(manager, sheetId) {
   var currentDuration = "4";
   
+  var selector = {
+    removeNoteSelector : function (selector) {
+      selector.on('fulfill', function (selected) {
+        manager.removeNote(selected[0].index);
+        selector.deSelectAll();
+    		manager.setSheet();
+    		manager.drawSheet();
+      })
+      return selector;
+    } (new Selector(1)),
+    addTupletSelector : function (selector) {
+      selector.on('select', function (item) {
+        manager.setColor(item.index, 'yellow');
+		    manager.renderSheet();
+      })
+      selector.on('deselect', function (item) {
+        manager.setColor(item.index, '');
+		    manager.renderSheet();
+      })
+      selector.on('fulfill', function (selected) {
+        console.log('add tuplet...');
+        var tuplet = new Effect('tuplet', Math.random(), null);
+        selected.forEach(function (item) {
+          manager.addEffect(item.index, tuplet)
+        })
+        manager.setSheet();
+        manager.drawSheet();
+        selector.deSelectAll();
+      })
+      return selector;
+    } (new Selector(3)),
+    removeTupletSelector : function (selector) {
+      selector.on('fulfill', function (selected) {
+        var index = selected[0].index;
+        var effects = manager.getEffect(index);
+        for (var i = effects.length - 1; i >= 0; i++) {
+          var effect = effects[i];
+          if (effect.type === "tuplet") {
+            var effectId = effect.id;
+            var effectSet = manager.findWithEffect(3, 'tuplet', effectId);
+            effectSet[0].indexes.forEach(function (index) {
+              manager.removeEffect(index, 'tuplet', effectId);
+            })
+          }
+        }
+        selector.deSelectAll();
+      });
+      return selector;
+    } (new Selector(1))
+  };
+  var noteSelector = selector.removeNoteSelector;
+  
+  
   manager.initEvent();
 	manager.on('hover_note', function (state) {
 		console.log('note hover', state.stave.index);
-		manager.setColor(state.note.on.index, 'blue');
+		if (!noteSelector.isSelected(state.note.on.index)) {
+		  manager.setColor(state.note.on.index, 'blue');
+		}
 		manager.renderSheet();
 	})
 	manager.on('leave_note', function (state, oldState) {
 		console.log('note leave', oldState.stave.index);
-		manager.setColor(oldState.note.on.index, '');
+		if (!noteSelector.isSelected(oldState.note.on.index)) {
+		  manager.setColor(oldState.note.on.index, '');
+		}
 		manager.renderSheet();
 	})
 	manager.on('click_stave', function (state) {
@@ -131,10 +264,15 @@ function startEditor(manager, sheetId) {
 		}
 	})
 	manager.on('click_note', function (state) {
-		console.log('note', state.note.on.index);
+		console.log('note', state.note.on.index);/*
 		manager.removeNote(state.note.on.index);
 		manager.setSheet();
-		manager.drawSheet();
+		manager.drawSheet();*/
+		if(!noteSelector.isSelected(state.note.on.index)) {
+		  noteSelector.addSelect(state.note.on.index, state)
+		} else {
+		  noteSelector.deSelect(state.note.on.index);
+		}
 	})
 	
   var socket = io('/sheet');
@@ -155,6 +293,7 @@ function startEditor(manager, sheetId) {
     sheet = Sheet.fromObject(sheet);
     manager.setSheet(sheet);
     manager.drawSheet();
+    noteSelector.reSelectAll();
   })
   socket.on('measure_update', function (index, measure) {
     console.log('measure_update')
@@ -162,6 +301,7 @@ function startEditor(manager, sheetId) {
     manager.setMeasure(index, measure, true);
     manager.setSheet();
     manager.drawSheet();
+    noteSelector.reSelectAll();
   })
   socket.on('meta_update', function (index, info) {
     console.log('meta_update')
@@ -174,5 +314,40 @@ function startEditor(manager, sheetId) {
     $("button[data-role='duration']").removeClass('active');
     $(this).addClass('active');
     currentDuration = $(this).attr('data-value');
+  })
+  
+  $("button[data-role='note-action']").on('click', function () {
+    $("button[data-role='note-action']").removeClass('active');
+    $(this).addClass('active');
+    var currentAction = $(this).attr('data-value');
+    noteSelector.deSelectAll();
+    switch (currentAction) {
+      case "remove-note":
+        noteSelector = selector.removeNoteSelector
+        break;
+      case "add-tuplet":
+        noteSelector = selector.addTupletSelector
+        break;
+      case "remove-tuplet":
+        noteSelector = selector.removeTupletSelector
+        break;
+        
+    }
+  })
+  
+  $("#track-add").click(function () {
+    var currentCount = manager.getChannelCount();
+    manager.addTrack(currentCount, new Channel([], 'treble', 'C'))
+  })
+  $("#track-remove").click(function () {
+    var currentCount = manager.getChannelCount();
+    if (currentCount === 1) return;
+    manager.removeTrack(currentCount -1 , 1);
+  })
+  $("#measure-length-set").click(function () {
+    var newLength = ~~$('#measure-length').val();
+    if (isNaN(newLength)) return;
+    if (newLength <= 0) return;
+    manager.setMeasureLength(newLength);
   })
 }
