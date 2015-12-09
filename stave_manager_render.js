@@ -408,6 +408,9 @@
   			nextStave = this.staveTable.staveByColume(0, i + j + 1);
   			connector = new Vex.Flow.StaveConnector(stave, nextStave);
   			connector.setType(Vex.Flow.StaveConnector.type.SINGLE_LEFT);
+  			
+  			connector.index = [j, i / tracks * this.staveTable.cols];
+  			
   			this.staveDrawables.push(connector);
   			
   			var colEnd = (i >= rows - this.staveTable.tracks) ? 
@@ -418,6 +421,9 @@
   			nextStave = this.staveTable.staveByColume(colEnd, i + j + 1);
   			connector2 = new Vex.Flow.StaveConnector(stave, nextStave);
   			connector2.setType(Vex.Flow.StaveConnector.type.SINGLE_RIGHT);
+  			
+  			connector2.index = [j, i / tracks * this.staveTable.cols + colEnd];
+  			
   			this.staveDrawables.push(connector2);
   		}
   	}

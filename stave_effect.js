@@ -122,6 +122,7 @@ EffectProcessor.trackEffectSets = [
 			if (items.length < 1) return;
 			var i, firstStave, secondStave;
 			var cols = sheetManager.staveTable.cols;
+			var index;
 			
 			var firstTrack = items[0];
 			var secondTrack = items[items.length - 1];
@@ -130,15 +131,19 @@ EffectProcessor.trackEffectSets = [
 				if (!info.onEnd) {
 					firstStave = firstTrack[i];
 					secondStave = secondTrack[i];
+					index = [0, i];
 				} else {
 					firstStave = firstTrack[i + cols - 1 < firstTrack.length ? i + cols - 1 : firstTrack.length - 1];
 					secondStave = secondTrack[i + cols - 1 < firstTrack.length ? i + cols - 1 : firstTrack.length - 1];
+					index = [0, i + cols - 1 < firstTrack.length ? i + cols - 1 : firstTrack.length - 1];
 				}
 	      var connector = new Vex.Flow.StaveConnector(firstStave, secondStave);
 	      connector.setType(Vex.Flow.StaveConnector.type[info.type || "SINGLE"]);
 	      if (info.text && i === 0) {
 	      	connector.setText(info.text);
 	      }
+	      connector.index = index;
+	      
 				sheetManager.staveDrawables.push(connector)
 			}
 		}
@@ -212,6 +217,7 @@ EffectProcessor.measureEffectSets = [
       if (info.text) {
       	connector.setText(info.text);
       }
+      connector.index = indexes[0];
 			sheetManager.staveDrawables.push(connector)
 		},
 		validate: function (sheetManager, sheet, type, id, indexes, items, datas, fix, change, result) {
