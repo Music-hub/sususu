@@ -110,7 +110,10 @@
   fn._changeState = function _changeState(state, noEvent) {
   	var stateChanged = false,
   	    oldState = this.inputState;
+  	    
   	this.inputState = state;
+  	var clonedState = JSON.parse(JSON.stringify(state));
+  	
   	//console.log(oldState, state);
   	
   	if (noEvent) {
@@ -121,25 +124,25 @@
   	if (!this._arrayEqual(oldState.stave.index, state.stave.index)) {
   		stateChanged = true;
   		if (oldState.stave.index !== null) {
-  			this.emit('leave_stave', this.inputState, oldState);
+  			this.emit('leave_stave', clonedState, oldState);
   		}
   		if (state.stave.index !== null) {
-  			this.emit('hover_stave', this.inputState, oldState);
+  			this.emit('hover_stave', clonedState, oldState);
   		}
   	}
   	if (!this._arrayEqual(oldState.note.on.index, state.note.on.index)) {
   		stateChanged = true;
   		if (oldState.note.on.index !== null) {
-  			this.emit('leave_note', this.inputState, oldState);
+  			this.emit('leave_note', clonedState, oldState);
   		}
   		if (state.note.on.index !== null) {
-  			this.emit('hover_note', this.inputState, oldState);
+  			this.emit('hover_note', clonedState, oldState);
   		}
   	}
   	
   	this.emit('mousemove', this.inputState);
   	if (stateChanged) {
-  		this.emit('input_state_change', this.inputState, oldState);
+  		this.emit('input_state_change', clonedState, oldState);
   	}
   };
   // given x, y, find the stave under that position
@@ -162,7 +165,7 @@
   				return {
   				  lineNumber: lineNumber,
   					index: [i, j],
-  					stave: this.staveTable.staveByTrack(i, j)
+  					// stave: this.staveTable.staveByTrack(i, j)
   				}
   			}
   		}
@@ -194,7 +197,7 @@
   			};
   	//console.log(staveState);
   	
-  	if (!staveState.stave) {
+  	if (!staveState.index) {
   		// it seems the input isn't on any stave
   		return result;
   	};
@@ -211,19 +214,19 @@
   		// find the last one before the input position
   		if (x > box.x) {
   			result.between.pre.index = temp.concat([i]);
-  			result.between.pre.note = this.noteTable.staveByTrack(temp[0], temp[1])[i];
+  			// result.between.pre.note = this.noteTable.staveByTrack(temp[0], temp[1])[i];
   		}
   		
   		// find the first on after the input position
   		if (x < box.x + box.w && !result.between.post.note) {
   			result.between.post.index = temp.concat([i]);
-  			result.between.post.note = this.noteTable.staveByTrack(temp[0], temp[1])[i];
+  			// result.between.post.note = this.noteTable.staveByTrack(temp[0], temp[1])[i];
   		}
   		
   		// find the one under the input position
   		if (x > box.x && x < box.x + box.w) {
   			result.on.index = temp.concat([i]);
-  			result.on.note = this.noteTable.staveByTrack(temp[0], temp[1])[i];
+  			// result.on.note = this.noteTable.staveByTrack(temp[0], temp[1])[i];
   		}
   	}
   	
@@ -242,10 +245,10 @@
   	
   	this._changeState(state, true);
   	
-  	if (this.inputState.note.on.note) {
+  	if (this.inputState.note.on.index) {
   		this.emit('click_note', this.inputState)
   	}
-  	if (this.inputState.stave.stave) {
+  	if (this.inputState.stave.index) {
   		this.emit('click_stave', this.inputState)
   	}
   }
