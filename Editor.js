@@ -169,6 +169,9 @@ $('#clone').click(function () {
 })
 
 function startEditor(manager, sheetId) {
+  
+  var oldDuration = "4";
+  
   var currentDuration = "4";
   
   var noteSelectors = {
@@ -229,7 +232,9 @@ function startEditor(manager, sheetId) {
         var state = selected[0].data;
         var target, keySignature, index, clef, lineNumber, pitch, note;
         selector.deSelectAll();
-            
+        
+        console.log(state);
+        
     		if (!state.note.on.index) {
     		  index = [state.stave.index[0]]
     			keySignature = manager.getInfo(index).keySignature;
@@ -248,6 +253,12 @@ function startEditor(manager, sheetId) {
     			manager.addNote(target, note);
     			manager.setSheet();
     			manager.drawSheet();
+    			
+    			if (currentDuration.match(/r$/) && oldDuration) {
+    			  currentDuration = oldDuration;
+            $("button[data-role='duration']").removeClass('active');
+            $("button[data-role='duration'][data-value='" + oldDuration + "']").addClass('active');
+    			}
     		}
             
       })
@@ -278,35 +289,9 @@ function startEditor(manager, sheetId) {
 		} else {
 		  currentStaveSelector.deSelect(index);
 		}
-	  /*
-		var target, note;
-		var keySignature, lineNumber, clef, pitch, index;
-		console.log('stave', state.stave.index);
-		if (!state.note.on.index) {
-		  index = [state.stave.index[0]]
-			keySignature = manager.getInfo(index).keySignature;
-			clef = manager.getInfo(index).clef;
-			lineNumber = state.stave.lineNumber;
-			pitch = manager.getPitch(lineNumber, clef, keySignature);
-			note = Note({ keys: [pitch.pitch + '/' + pitch.octave], duration: currentDuration})
-			if (state.note.between.post.index) {
-				target = state.note.between.post.index.concat([]);
-			} else if (state.note.between.pre.index) {
-				target = state.note.between.pre.index.concat([]);
-				target[2] += 1
-			} else {
-				target = state.stave.index.concat([0]);
-			}
-			manager.addNote(target, note);
-			manager.setSheet();
-			manager.drawSheet();
-		}*/
 	})
 	manager.on('click_note', function (state) {
-		console.log('note', state.note.on.index);/*
-		manager.removeNote(state.note.on.index);
-		manager.setSheet();
-		manager.drawSheet();*/
+		
 		if(!currentNoteSelector.isSelected(state.note.on.index)) {
 		  currentNoteSelector.addSelect(state.note.on.index, state)
 		} else {
@@ -353,6 +338,10 @@ function startEditor(manager, sheetId) {
     $("button[data-role='duration']").removeClass('active');
     $(this).addClass('active');
     currentDuration = $(this).attr('data-value');
+    if (!currentDuration.match(/r$/)) {
+      oldDuration = currentDuration;
+    }
+    
   })
   
   $("button[data-role='note-action']").on('click', function () {
