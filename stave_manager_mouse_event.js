@@ -218,7 +218,7 @@
   		}
   		
   		// find the first on after the input position
-  		if (x < box.x + box.w && !result.between.post.note) {
+  		if (x < box.x + box.w && !result.between.post.index) {
   			result.between.post.index = temp.concat([i]);
   			// result.between.post.note = this.noteTable.staveByTrack(temp[0], temp[1])[i];
   		}
