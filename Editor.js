@@ -171,7 +171,7 @@ $('#clone').click(function () {
 function startEditor(manager, sheetId) {
   var currentDuration = "4";
   
-  var selector = {
+  var noteSelectors = {
     removeNoteSelector : function (selector) {
       selector.on('fulfill', function (selected) {
         manager.removeNote(selected[0].index);
@@ -221,25 +221,64 @@ function startEditor(manager, sheetId) {
       return selector;
     } (new Selector(1))
   };
-  var noteSelector = selector.removeNoteSelector;
+  var currentNoteSelector = noteSelectors.removeNoteSelector;
   
+  var staveSelectors = {
+    addNoteSelector : function (selector) {
+      selector.on('fulfill', function (selected) {
+        var state = selected[0].data;
+        var target, keySignature, index, clef, lineNumber, pitch, note;
+        selector.deSelectAll();
+            
+    		if (!state.note.on.index) {
+    		  index = [state.stave.index[0]]
+    			keySignature = manager.getInfo(index).keySignature;
+    			clef = manager.getInfo(index).clef;
+    			lineNumber = state.stave.lineNumber;
+    			pitch = manager.getPitch(lineNumber, clef, keySignature);
+    			note = Note({ keys: [pitch.pitch + '/' + pitch.octave], duration: currentDuration})
+    			if (state.note.between.post.index) {
+    				target = state.note.between.post.index.concat([]);
+    			} else if (state.note.between.pre.index) {
+    				target = state.note.between.pre.index.concat([]);
+    				target[2] += 1
+    			} else {
+    				target = state.stave.index.concat([0]);
+    			}
+    			manager.addNote(target, note);
+    			manager.setSheet();
+    			manager.drawSheet();
+    		}
+            
+      })
+      return selector;
+    } (new Selector(1)),
+  }
+  var currentStaveSelector = staveSelectors.addNoteSelector;
   
   manager.initEvent();
 	manager.on('hover_note', function (state) {
 		console.log('note hover', state.stave.index);
-		if (!noteSelector.isSelected(state.note.on.index)) {
+		if (!currentNoteSelector.isSelected(state.note.on.index)) {
 		  manager.setColor(state.note.on.index, 'blue');
 		}
 		manager.renderSheet();
 	})
 	manager.on('leave_note', function (state, oldState) {
 		console.log('note leave', oldState.stave.index);
-		if (!noteSelector.isSelected(oldState.note.on.index)) {
+		if (!currentNoteSelector.isSelected(oldState.note.on.index)) {
 		  manager.setColor(oldState.note.on.index, '');
 		}
 		manager.renderSheet();
 	})
 	manager.on('click_stave', function (state) {
+	  var index = state.stave.index.slice(0, 2);
+		if(!currentStaveSelector.isSelected(index)) {
+		  currentStaveSelector.addSelect(index, state)
+		} else {
+		  currentStaveSelector.deSelect(index);
+		}
+	  /*
 		var target, note;
 		var keySignature, lineNumber, clef, pitch, index;
 		console.log('stave', state.stave.index);
@@ -261,17 +300,17 @@ function startEditor(manager, sheetId) {
 			manager.addNote(target, note);
 			manager.setSheet();
 			manager.drawSheet();
-		}
+		}*/
 	})
 	manager.on('click_note', function (state) {
 		console.log('note', state.note.on.index);/*
 		manager.removeNote(state.note.on.index);
 		manager.setSheet();
 		manager.drawSheet();*/
-		if(!noteSelector.isSelected(state.note.on.index)) {
-		  noteSelector.addSelect(state.note.on.index, state)
+		if(!currentNoteSelector.isSelected(state.note.on.index)) {
+		  currentNoteSelector.addSelect(state.note.on.index, state)
 		} else {
-		  noteSelector.deSelect(state.note.on.index);
+		  currentNoteSelector.deSelect(state.note.on.index);
 		}
 	})
 	
@@ -293,7 +332,7 @@ function startEditor(manager, sheetId) {
     sheet = Sheet.fromObject(sheet);
     manager.setSheet(sheet);
     manager.drawSheet();
-    noteSelector.reSelectAll();
+    currentNoteSelector.reSelectAll();
   })
   socket.on('measure_update', function (index, measure) {
     console.log('measure_update')
@@ -301,7 +340,7 @@ function startEditor(manager, sheetId) {
     manager.setMeasure(index, measure, true);
     manager.setSheet();
     manager.drawSheet();
-    noteSelector.reSelectAll();
+    currentNoteSelector.reSelectAll();
   })
   socket.on('meta_update', function (index, info) {
     console.log('meta_update')
@@ -320,16 +359,16 @@ function startEditor(manager, sheetId) {
     $("button[data-role='note-action']").removeClass('active');
     $(this).addClass('active');
     var currentAction = $(this).attr('data-value');
-    noteSelector.deSelectAll();
+    currentNoteSelector.deSelectAll();
     switch (currentAction) {
       case "remove-note":
-        noteSelector = selector.removeNoteSelector
+        currentNoteSelector = noteSelectors.removeNoteSelector
         break;
       case "add-tuplet":
-        noteSelector = selector.addTupletSelector
+        currentNoteSelector = noteSelectors.addTupletSelector
         break;
       case "remove-tuplet":
-        noteSelector = selector.removeTupletSelector
+        currentNoteSelector = noteSelectors.removeTupletSelector
         break;
         
     }
