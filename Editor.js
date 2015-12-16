@@ -1,178 +1,137 @@
-$('.menu .item').tab();
-
-function handler(){
-
-    $('.ui.sidebar').sidebar({ overlay: false }).sidebar('toggle');
-
-}
-
-$('.accordion')
-  .accordion({
-    selector: {
-      trigger: '.title'
-    }
-  })
-;
+$('.accordion').accordion({
+    //exclusive: false,
+    //duration: 2000
+});
 
 
-/* global Sheet, SheetManager */
-;(function () {
-  if (!location.pathname.match(/\/editor\/[A-Za-z0-9\-]+\/?/)) return;
-  var sheetId,
-      siteBase = window.location.protocol + "//" + window.location.host,
-      sheetAPIPath = '/api/sheet/get/',
-      revisionAPIPath = '/api/revision/get/';
-  
-  console.log('ready to fetch sheet!');
-  sheetId = /\/editor\/([A-Za-z0-9\-]+)\/?/.exec(location.pathname)[1]
-  console.log('sheet id is ' + sheetId);
-  
-  $.get(siteBase + sheetAPIPath + sheetId, function (ev) {
-    console.log(ev);
+$("button[data-role='duration']").on('click', function(){
     
-    if (ev.level === 'error') {
-      $('#edit').html('<h3>failed to get sheet due to reason: ' + ev.message + '</h3>');
-      return
-    }
-    
-    var sheet = ev.data;
-    
-    document.title = sheet.name;
-    
-    var selectedRevision = sheet.revisions[sheet.revisions.length - 1];
-    var revisionId = selectedRevision._id;
-    
-    $.get(siteBase + revisionAPIPath + revisionId, function (ev) {
-      console.log(ev);
-      var revision = ev.data;
-      
-      var sheet = Sheet.fromObject(revision.data);
-      console.log(sheet);
-      
-      var $canvas = $('<canvas>');
-      
-      var canvas  = $canvas[0];
-          
-    	var manager = new SheetManager(canvas);
-    	
-    	manager.setSheet(sheet, {cols: 3, width: 920});
-    	
-    	manager.drawSheet();
-    	console.log(manager)
-	    
-	    var height = canvas.height, width = canvas.width;
-	    
-	    $('#edit').animate({
-	      height: height + 'px',
-	      width: width + 'px'
-	    }, 500, function () {
-	      $canvas.css('opacity', '0')
-	      $(this).html('').append($canvas);
-	      $canvas.animate({
-	        opacity: 1
-	      }, 500);
-	    })
-	    
-	    startEditor(manager, sheetId);
-      
-    });
-  });
-  
-}());
-
-
-$('#clone').click(function () {
-  if (!location.pathname.match(/\/editor\/[A-Za-z0-9\-]+\/?/)) return;
-  var sheetId = /\/editor\/([A-Za-z0-9\-]+)\/?/.exec(location.pathname)[1];
-  var cloneApi = "/api/sheet/clone/"
-  $.get(cloneApi + sheetId, function (ev) {
-    if (ev.level === "success") {
-      location.href = "/editor/" + ev.data._id;
-    }
-  })
-})
-
-function startEditor(manager, sheetId) {
-  var currentDuration = "4";
-  
-  manager.initEvent();
-	manager.on('hover_note', function (state) {
-		console.log('note hover', state.stave.index);
-		manager.setColor(state.note.on.index, 'blue');
-		manager.renderSheet();
-	})
-	manager.on('leave_note', function (state, oldState) {
-		console.log('note leave', oldState.stave.index);
-		manager.setColor(oldState.note.on.index, '');
-		manager.renderSheet();
-	})
-	manager.on('click_stave', function (state) {
-		var target, note;
-		var keySignature, lineNumber, clef, pitch, index;
-		console.log('stave', state.stave.index);
-		if (!state.note.on.index) {
-		  index = [state.stave.index[0]]
-			keySignature = manager.getInfo(index).keySignature;
-			clef = manager.getInfo(index).clef;
-			lineNumber = state.stave.lineNumber;
-			pitch = manager.getPitch(lineNumber, clef, keySignature);
-			note = Note({ keys: [pitch.pitch + '/' + pitch.octave], duration: currentDuration})
-			if (state.note.between.post.index) {
-				target = state.note.between.post.index.concat([]);
-			} else if (state.note.between.pre.index) {
-				target = state.note.between.pre.index.concat([]);
-				target[2] += 1
-			} else {
-				target = state.stave.index.concat([0]);
-			}
-			manager.addNote(target, note);
-			manager.setSheet();
-			manager.drawSheet();
-		}
-	})
-	manager.on('click_note', function (state) {
-		console.log('note', state.note.on.index);
-		manager.removeNote(state.note.on.index);
-		manager.setSheet();
-		manager.drawSheet();
-	})
-	
-  var socket = io('/sheet');
-  socket.emit('join', sheetId);
-  
-  manager.on('layout_update', function (sheet) {
-    socket.emit('layout_update', sheet.toObject());
-  })
-  manager.on('measure_update', function (index, measure) {
-    socket.emit('measure_update', index, measure.toObject());
-  })
-  manager.on('meta_update', function (index, info) {
-    socket.emit('meta_update', index, info);
-  })
-  
-  socket.on('layout_update', function (sheet) {
-    console.log('layout_update')
-    sheet = Sheet.fromObject(sheet);
-    manager.setSheet(sheet);
-    manager.drawSheet();
-  })
-  socket.on('measure_update', function (index, measure) {
-    console.log('measure_update')
-    measure = Measure.fromObject(measure);
-    manager.setMeasure(index, measure, true);
-    manager.setSheet();
-    manager.drawSheet();
-  })
-  socket.on('meta_update', function (index, info) {
-    console.log('meta_update')
-    manager.setInfo(index, info, true);
-    manager.setSheet();
-    manager.drawSheet();
-  })
-  
-  $("button[data-role='duration']").on('click', function () {
     $("button[data-role='duration']").removeClass('active');
+    $(this).addClass('active'); 
+});
+
+
+
+$('#add_chord,#phone_add_chord').on('click', function(){
+    
+    $('.ui.modal').modal('show');
+                 
+});
+
+/*$('.ui.modal').modal({
+
+    onVisible: function(){
+      window.alert('Edit your chord!');
+    }
+
+});*/
+
+$('#root .item').on('click',function(){
+
+    
+    $('#root .item').removeClass('active');
     $(this).addClass('active');
-    currentDuration = $(this).attr('data-value');
-  })
+    
+    setvalue();
+
+});
+
+$('#sharp_drop .item').on('click',function(){
+
+    
+    $('#sharp_drop .item').removeClass('active');
+    $(this).addClass('active');
+    
+    setvalue();
+});
+
+$('#guide .item').on('click',function(){
+    
+    
+    $('#guide .item').removeClass('active');
+    $(this).addClass('active'); 
+    
+    setvalue();
+});
+
+$('#tension .item').on('click',function(){
+
+    $('#tension .item').removeClass('active');
+    $(this).addClass('active'); 
+    
+    setvalue();
+});
+
+function setvalue(){
+
+    var root,sharp_drop,guide,temp,temp1,tension;
+    root = $('#root .active.item').text().trim();
+    temp1 = $('#sharp_drop .active.item').text().trim();
+    guide =$('#guide .active.item').text().trim();
+    temp = $('#tension .active.item').text().trim();
+    
+    if(temp == "none")
+        tension = "";
+    else
+        tension = temp;
+    
+    if(temp1 == "none")
+        sharp_drop = "";
+    else
+        sharp_drop = temp1;
+    
+    $('#chord_show').text(root+sharp_drop+guide+tension);
+
+    return root+sharp_drop+guide+tension;
 }
+
+$('#modal_button_add').on('click',function(){
+
+    //var but_num = $("button[data-role='chord']").size(); //chord button 數量
+    
+    result = setvalue();
+    
+    $('#chord_pool').prepend('<div class="chord_container">'+
+                             '<button class="circular ui icon button" id="remove">'+
+                             '<i class="small remove circle icon"></i>'+
+                             '</button>'+
+                             '<button class="ui button" data-role="chord">'+
+                             result+
+                             '</button>'+
+                             '</div>');
+    
+    $('#phone_chord_pool').prepend('<div class="chord_container">'+
+                             '<button class="circular ui icon button" id="remove">'+
+                             '<i class="small remove circle icon"></i>'+
+                             '</button>'+
+                             '<button class="ui button" data-role="chord">'+
+                             result+
+                             '</button>'+
+                             '</div>'); 
+});
+
+$('#modal_button_cancel').on('click',function(){
+
+    $('.ui.modal').modal('hide');
+
+});
+
+
+$('#chord_pool').on('click','.chord_container #remove',function(){
+    
+    //$(this).parent().remove(); // not this
+    var chord = $(this).next().text(); //the element after clicked element
+    
+    $("button:contains('"+chord+"')").parent().remove();
+});
+
+$('#phone_chord_pool').on('click','.chord_container #remove',function(){
+    
+    //$(this).parent().remove();
+    var chord = $(this).next().text();
+    $("button:contains('"+chord+"')").parent().remove();
+});
+
+$('.tabular.menu .item').tab();
+
+//$('.ui.sidebar').sidebar('toggle');
