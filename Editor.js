@@ -17,17 +17,18 @@ $('.accordion')
 $('.ui.dropdown')
   .dropdown()
 ;
-
+/*
 $('#new-rev').on('focus', function (e) {
   e.preventDefault();
   e.stopPropagation();
-});
+});*/
+/*
 $('#new-rev').on('click', function (e) {
   $('.ui.dropdown')
     .dropdown()
   ;
  $(this).find('input').focus();
-})
+})*/
 
 $('#create-new-sheet').click(function () {
   var createSheetApiPath = "/api/sheet/create/";
@@ -64,7 +65,7 @@ function showRevisionList (list) {
   list = list.slice(0);
   var i;
   var templete = 
-  ' <div class="item">' +
+  ' <div class="item revision">' +
     '<i class="dropdown icon"></i>'+
     '<span class="text">revision 1</span>'+
     '<div class="menu">'+
@@ -74,11 +75,20 @@ function showRevisionList (list) {
   '</div>';
   
   $('#revision-list').find('.item.revision').remove();
+  var selectedRevision = $('#revision-list').attr('data-selected-revision');
+  if (selectedRevision === "__live__") {
+    selectedRevision = list[list.length - 1]._id;
+  }
   var item;
   for (i = 0; i < list.length; i++) {
     item = $(templete);
     item.find('.text').text(shortText(list[i].comment.message, 24));
-    item.attr('data-revision-id', list[i].comment.id);
+    
+    if (selectedRevision === list[i]._id) {
+      item.find('.text').css('color', 'blue')
+    }
+    
+    item.attr('data-revision-id', list[i]._id);
     if (i == list.length - 1) {
       item.find('.text').text("(latest) " + shortText(list[i].comment.message, 15));
       item.find('.menu .item[data-action=reverse]').remove();
@@ -109,18 +119,18 @@ function showRevisionList (list) {
       return
     }
     
-    var sheet = ev.data;
+    var sheetInfo = ev.data;
     
-    document.title = sheet.name;
+    document.title = sheetInfo.name;
     
-    var selectedRevision = sheet.revisions[sheet.revisions.length - 1];
+    var selectedRevision = sheetInfo.revisions[sheetInfo.revisions.length - 1];
     var revisionId = selectedRevision._id;
     
-    if (sheet.shortLink) {
-      $('#short-link').val(sheet.shortLink)
+    if (sheetInfo.shortLink) {
+      $('#short-link').val(sheetInfo.shortLink)
       
       var qrcode = new QRCode(document.getElementById("short-link-qrcode"), {
-          text: sheet.shortLink,
+          text: sheetInfo.shortLink,
           width: 200,
           height: 200,
           colorDark : "#000000",
@@ -129,7 +139,7 @@ function showRevisionList (list) {
       });
     }
     
-    showRevisionList(sheet.revisions);
+    showRevisionList(sheetInfo.revisions);
     
     $.get(siteBase + revisionAPIPath + revisionId, function (ev) {
       console.log(ev);
@@ -163,7 +173,7 @@ function showRevisionList (list) {
 	      }, 500);
 	    })
 	    
-	    startEditor(manager, sheetId);
+	    startEditor(manager, sheetId, sheetInfo);
       
     });
   });
@@ -244,7 +254,9 @@ $('#clone').click(function () {
   })
 })
 
-function startEditor(manager, sheetId) {
+function startEditor(manager, sheetId, sheetInfo) {
+  
+  var isLive = true;
   
   var oldDuration = "4";
   
@@ -359,6 +371,7 @@ function startEditor(manager, sheetId) {
 		manager.renderSheet();
 	})
 	manager.on('click_stave', function (state) {
+    if (!isLive) return;
 	  var index = state.stave.index.slice(0, 2);
 		if(!currentStaveSelector.isSelected(index)) {
 		  currentStaveSelector.addSelect(index, state)
@@ -367,6 +380,7 @@ function startEditor(manager, sheetId) {
 		}
 	})
 	manager.on('click_note', function (state) {
+    if (!isLive) return;
 		
 		if(!currentNoteSelector.isSelected(state.note.on.index)) {
 		  currentNoteSelector.addSelect(state.note.on.index, state)
@@ -389,6 +403,8 @@ function startEditor(manager, sheetId) {
   })
   
   socket.on('layout_update', function (sheet) {
+    if (!isLive) return;
+    
     console.log('layout_update')
     sheet = Sheet.fromObject(sheet);
     manager.setSheet(sheet);
@@ -396,6 +412,8 @@ function startEditor(manager, sheetId) {
     currentNoteSelector.reSelectAll();
   })
   socket.on('measure_update', function (index, measure) {
+    if (!isLive) return;
+    
     console.log('measure_update')
     measure = Measure.fromObject(measure);
     manager.setMeasure(index, measure, true);
@@ -404,10 +422,17 @@ function startEditor(manager, sheetId) {
     currentNoteSelector.reSelectAll();
   })
   socket.on('meta_update', function (index, info) {
+    if (!isLive) return;
+    
     console.log('meta_update')
     manager.setInfo(index, info, true);
     manager.setSheet();
     manager.drawSheet();
+  })
+  socket.on('sheet_info_update', function (newSheetInfo) {
+    console.log(newSheetInfo);
+    sheetInfo = newSheetInfo;
+    showRevisionList(newSheetInfo.revisions);
   })
   
   $("button[data-role='duration']").on('click', function () {
@@ -454,4 +479,81 @@ function startEditor(manager, sheetId) {
     if (newLength <= 0) return;
     manager.setMeasureLength(newLength);
   })
+  
+  $('#new-rev').on('keydown', function (e) {
+    if(e.keyCode == 13){
+      createRevision();
+    }
+  })
+  $('#new-rev').parent().find('i').click(createRevision);
+  
+  function createRevision () {
+    var revisionApiPath = '/api/sheet/revision/';
+    var comment = $('#new-rev').val();
+    if (!comment) return;
+    $('#new-rev').val('');
+    
+    $.post(
+      revisionApiPath + sheetId,
+      {
+        comment: comment
+      },
+      function (ev) {
+        if (ev.level === 'error') return alert(ev.message);
+      }
+    )
+  }
+  
+  $('#revision-list').on('click', '.revision .item', function () {
+    // alert($(this).attr('data-action'));
+    // alert($(this).parents('.revision').attr('data-revision-id'));
+    var action = $(this).attr('data-action');
+    var revisionId = $(this).parents('.revision').attr('data-revision-id');
+    
+    switch(action) {
+      case 'show':
+        toggleRevision(revisionId);
+        break;
+      case 'reverse':
+        revertToRevision(revisionId);
+        break;
+    }
+  })
+  
+  function toggleRevision (revisionId) {
+    isLive = sheetInfo.revisions[sheetInfo.revisions.length - 1]._id === revisionId;
+    
+    if (isLive) {
+      $('#revision-list').attr('data-selected-revision', '__live__');
+    } else {
+      $('#revision-list').attr('data-selected-revision', revisionId);
+    }
+    // alert(isLive);
+    showRevisionList(sheetInfo.revisions);
+    
+    // alert(isLive);
+    var revisionGetPath = '/api/revision/get/';
+    $.get(
+      revisionGetPath + revisionId,
+      function (ev) {
+        if (ev.level === 'error') return alert(ev.message);
+        var sheet = ev.data.data;
+        manager.setSheet(Sheet.fromObject(sheet));
+        manager.drawSheet();
+      }
+    )
+  }
+  function revertToRevision (revisionId) {
+    var revertApi = '/api/sheet/reverse/'
+    $.post(
+      revertApi + sheetId,
+      {
+        revision: revisionId
+      },
+      function (ev) {
+        console.log(ev);
+        if (ev.level === 'error') return alert(ev.message);
+      }
+    )
+  }
 }
