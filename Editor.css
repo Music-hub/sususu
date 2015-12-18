@@ -78,3 +78,47 @@
 .ui.button.remove {
     color: red;
 }
+
+.clearfix:after {
+    content: ".";
+    display: block;
+    height: 0;
+    clear: both;
+    visibility: hidden;
+}
+
+
+.overlay {
+    position: fixed;
+    left: 0px;
+    top: 0px;/*
+    right: 0px;
+    bottom: 0px;*/
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    table-layout:fixed;
+    display:table;
+}
+
+.overlay .mid-wrap {
+    display:table-cell;
+    vertical-align:middle;
+}
+.overlay .wrap {
+    margin-left:auto;
+    margin-right:auto;
+    width: 300px;
+    max-width: 90%;
+    
+    text-align: center;
+}
+
+.overlay .ui.card {
+    width: 300px;
+    max-width: 100%;
+}
+
+.overlay .ui.card .image{
+    padding: 2em;
+}

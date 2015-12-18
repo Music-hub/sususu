@@ -14,10 +14,84 @@ $('.accordion')
   })
 ;
 
+$('.ui.dropdown')
+  .dropdown()
+;
+
+$('#new-rev').on('focus', function (e) {
+  e.preventDefault();
+  e.stopPropagation();
+});
+$('#new-rev').on('click', function (e) {
+  $('.ui.dropdown')
+    .dropdown()
+  ;
+ $(this).find('input').focus();
+})
+
+$('#create-new-sheet').click(function () {
+  var createSheetApiPath = "/api/sheet/create/";
+  var editorPath = "/editor/";
+  
+	var sheet = Sheet([
+		Channel([], "treble", "C")
+	], 4);
+	$.post(
+	  createSheetApiPath,
+	  {
+	    data: JSON.stringify(sheet.toObject()),
+	    name: "A new Sheet"
+	  },
+	  function (ev) {
+	    if (ev.level === "error") return alert('error: ' + ev.message);
+	    var sheetId = ev.data._id;
+	    location.href = editorPath + sheetId;
+	  }
+  )
+	
+	
+})
+
+function shortText(str, maxLength) {
+  maxLength = maxLength || 15;
+  if (str.length <= maxLength) {
+    return str;
+  }
+  return str.slice(0, maxLength - 7) + "..." + str.slice(str.length - 4, str.length);
+}
+
+function showRevisionList (list) {
+  list = list.slice(0);
+  var i;
+  var templete = 
+  ' <div class="item">' +
+    '<i class="dropdown icon"></i>'+
+    '<span class="text">revision 1</span>'+
+    '<div class="menu">'+
+      '<div class="item" data-action="reverse">reverse to this version</div>'+
+      '<div class="item" data-action="show">show</div>'+
+    '</div>'+
+  '</div>';
+  
+  $('#revision-list').find('.item.revision').remove();
+  var item;
+  for (i = 0; i < list.length; i++) {
+    item = $(templete);
+    item.find('.text').text(shortText(list[i].comment.message, 24));
+    item.attr('data-revision-id', list[i].comment.id);
+    if (i == list.length - 1) {
+      item.find('.text').text("(latest) " + shortText(list[i].comment.message, 15));
+      item.find('.menu .item[data-action=reverse]').remove();
+    }
+    item.insertAfter('.item.new-revision-wrap');
+  }
+}
 
 /* global Sheet, SheetManager */
 ;(function () {
   if (!location.pathname.match(/\/editor\/[A-Za-z0-9\-]+\/?/)) return;
+  $('.overlay').hide();
+  
   var sheetId,
       siteBase = window.location.protocol + "//" + window.location.host,
       sheetAPIPath = '/api/sheet/get/',
@@ -54,6 +128,8 @@ $('.accordion')
           correctLevel : QRCode.CorrectLevel.M
       });
     }
+    
+    showRevisionList(sheet.revisions);
     
     $.get(siteBase + revisionAPIPath + revisionId, function (ev) {
       console.log(ev);
