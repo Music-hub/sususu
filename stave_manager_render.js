@@ -47,10 +47,10 @@
   				      line = 5
   				      break;
   				    case "16":
-  				      line = 4
+  				      line = 5
   				      break;
   				    case "32":
-  				      line = 3
+  				      line = 5
   				      break;
   				  }
   				  fakePitch = self.getPitch(line, noteStruct.clef, "C");
