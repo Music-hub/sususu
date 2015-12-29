@@ -827,6 +827,64 @@ function testEditEvents(canvas, container) {
 	
 	manager.drawSheet();
 }
+function testVlota(canvas, container) {
+	var sheet = new Sheet([
+		Channel([], "treble", "C")
+	], 6);
+	
+	var manager = new SheetManager(canvas);
+	var index = null;
+	var result = null;
+	manager.setSheet(sheet, {cols: 3, width: 1000, paddingLeft: 40, paddingFirstLine: 80, lineHeight: 130});
+	manager.setMeasureLength(6);
+	manager.setMeasureLength(6);
+	manager.addTrack(0, new Channel([], "bass", "Eb"));
+	manager.setSheet();
+	
+	var volta = new Effect('volta', Math.random(), {type: "BEGIN", text: 1});
+	manager.addUniqueEffect([0, 1], volta);
+	manager.addUniqueEffect([1, 1], volta);
+	var volta = new Effect('volta', Math.random(), {type: "MID"});
+	manager.addUniqueEffect([0, 2], volta);
+	manager.addUniqueEffect([1, 2], volta);
+	var volta = new Effect('volta', Math.random(), {type: "END"});
+	manager.addUniqueEffect([0, 3], volta);
+	manager.addUniqueEffect([1, 3], volta);
+	var volta = new Effect('volta', Math.random(), {type: "BEGIN_END", text: 2});
+	manager.addUniqueEffect([0, 4], volta);
+	manager.addUniqueEffect([1, 4], volta);
+	var staveConnector = new Effect('stave_connector', Math.random(), {
+		type: "BOLD_DOUBLE_LEFT", 
+		onEnd: false, 
+		all: true,
+		begBarType: 'REPEAT_BEGIN', 
+		endBarType: null});
+	manager.addUniqueEffect([0, 0], staveConnector);
+	manager.addUniqueEffect([1, 0], staveConnector);
+	var staveConnector = new Effect('stave_connector', Math.random(), {
+		type: "BOLD_DOUBLE_RIGHT", 
+		onEnd: true, 
+		all: true,
+		begBarType: null, 
+		endBarType: 'REPEAT_END'});
+	manager.addUniqueEffect([0, 3], staveConnector);
+	manager.addUniqueEffect([1, 3], staveConnector);
+	var staveConnector = new Effect('stave_connector', Math.random(), {
+		type: "BOLD_DOUBLE_RIGHT", 
+		onEnd: true, 
+		all: true,
+		begBarType: null, 
+		endBarType: 'REPEAT_END'});
+	manager.addUniqueEffect([0, 4], staveConnector);
+	manager.addUniqueEffect([1, 4], staveConnector);
+
+	/*
+	var volta2 = new Effect('volta', Math.random(), {type: "END"});
+	manager.addUniqueEffect([1, 2], volta2);*/
+
+	
+	manager.drawSheet();
+}
 
 runTest('sheet draw', testSheet)
 runTest('another sheet draw', testSheet2);
@@ -855,3 +913,4 @@ runTest('test get line number', testLineNumber);
 runTest('test get and set measure', testGetAndSetMeasure);
 runTest('test get and set metadata', testGetAndSetMetaData);
 runTest('test edit events', testEditEvents);
+runTest('test volta', testVlota);
