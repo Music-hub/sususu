@@ -75,25 +75,76 @@ SoundManager.prototype.loadSound = function loadSound() {
 			var note = 50; // the MIDI note
 			var velocity = 127; // how hard the note hits
 			// play the note
-			MIDI.setVolume(0, 127);
+		/*	MIDI.setVolume(0, 127);
 			MIDI.noteOn(0, note, velocity, delay);
-			MIDI.noteOff(0, note, delay + 0.75);
+			MIDI.noteOff(0, note, delay + 0.75); */ 
 			
 			self.emit('load')
 		}
 	});
 }
-SoundManager.prototype.playSheet = function playSheet(sheet, bpm) {
+
+
+SoundManager.prototype.playSheet = function playSheet(sheetManager, bpm, beatValue) {
   bpm = bpm || 140;
   
 	var delay = 0; // play one note every quarter second
 	var note = 50; // the MIDI note
 	var velocity = 127; // how hard the note hits
   
+  var measure, track, voice,
+    channel = 0,
+    soundMeasureOffset = 0,
+    soundMeasureLength = null,
+    soundNoteOffset = 0,
+    soundNoteLength = null,
+    totalMeasures = sheetManager.getMeasureCount(), 
+    totalTracks = sheetManager.getChannelCount();
+  
+  for (track = 0; track < totalTracks; track++) {
+    soundMeasureOffset = 0;
+    for (measure = 0; measure < totalMeasures; measure++) {
+      soundNoteOffset = 0;
+      voice = sheetManager.voiceTable.staveByTrack(track, measure);
+      voice.tickables.forEach(function (tickable) {
+        soundNoteLength = tickable.ticks.numerator 
+          / tickable.ticks.denominator 
+          / Vex.Flow.RESOLUTION
+          * 4
+          * (60 / bpm);
+        console.log(soundNoteLength);
+        
+        var isSilent = tickable.noteType !== 'n';
+        console.log('isSilent: ' + isSilent);
+        if (!isSilent) {
+          tickable.keys.forEach(function (key) {
+            var midiNum = MIDI.keyToNote[key];
+            if ('number' !== typeof midiNum) return;
+            console.log(midiNum);
+            console.log(soundMeasureOffset + soundNoteOffset, soundMeasureOffset + soundNoteOffset + soundNoteLength)
+      			MIDI.setVolume(0, 127);
+      			MIDI.noteOn(0, midiNum, velocity, soundMeasureOffset + soundNoteOffset);
+      			MIDI.noteOff(0, midiNum, soundMeasureOffset + soundNoteOffset + soundNoteLength);
+      			
+          })
+        }
+        soundNoteOffset += soundNoteLength;
+      })
+      var soundMeasureLength = voice.getTotalTicks().numerator
+        / voice.getTotalTicks().denominator
+        / Vex.Flow.RESOLUTION
+        * 4
+        * (60 / bpm);
+      soundMeasureOffset += soundMeasureLength;
+      console.log('total seconds in measure: ' + soundNoteOffset, ', expexted ' + soundMeasureLength);
+      //soundOffsets += 
+    }
+  }
+  
   console.log(MIDI)
   
 }
-
+/*
 
 function test() {
   var a = new SoundManager;
@@ -104,3 +155,5 @@ function test() {
 }
 
 test();
+
+*/
