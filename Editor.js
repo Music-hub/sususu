@@ -556,4 +556,22 @@ function startEditor(manager, sheetId, sheetInfo) {
       }
     )
   }
+  
+  $('#play').click(function () {
+    // test only
+    var bpm = $('#play-bpm').val();
+    bpm = parseInt(bpm, 10);
+    if (isNaN(bpm) || bpm <= 0) {
+      bpm = 140;
+    }
+    playSheet(manager, bpm);
+  })
+}
+
+function playSheet(sheet, bpm) {
+  var a = new SoundManager;
+  a.loadSound();
+  a.on('load', function () {
+    a.playSheet(sheet, bpm);
+  })
 }

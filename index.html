@@ -189,17 +189,29 @@
           </div>
           <div class="title"><i class="share alternate icon"></i>Share</div>
           <div class="content share">
-              <div class="column">
-                <h3>Short Link:</h3>
-                <div class="ui input">
-                  <input onClick="this.select();" id="short-link" type="text" placeholder="loading..." readonly>
-                </div>
+            <div class="column">
+              <h3>Short Link:</h3>
+              <div class="ui input">
+                <input onClick="this.select();" id="short-link" type="text" placeholder="loading..." readonly>
               </div>
-              <div class="column">
-                <h3>QRCode:</h3>
-                <dic id="short-link-qrcode" style="display: inline-block;"></dic>
-              </div>
+            </div>
+            <div class="column">
+              <h3>QRCode:</h3>
+              <dic id="short-link-qrcode" style="display: inline-block;"></dic>
+            </div>
           </div>
+          
+          <div class="title">Play</div>
+          <div class="content">
+            <div class="column">
+              <button class="ui button" id="play">Play</button>
+            </div>
+            Bpm
+            <div class="ui input">
+              <input id="play-bpm" type="number" value="140">
+            </div>
+          </div>
+          
           </div>
         </div>
         
@@ -266,8 +278,15 @@
         <script src="stave_formats.js"></script>
         
         <script src="/socket.io/socket.io.js"></script>
+        
+        <script src="/components/MIDI.js/inc/shim/Base64.js"></script>
+        <script src="/components/MIDI.js/inc/shim/Base64binary.js"></script>
+        <script src="/components/MIDI.js/inc/shim/WebAudioAPI.js"></script>
+        <script src="/components/MIDI.js/inc/shim/WebMIDIAPI.js"></script>
+        <script src="/components/MIDI.js/build/MIDI.js"></script>
+        <script src="sound_manager.js"></script>
+        
         <script src="Editor.js"></script>
-
     </body>
     
 </html>
