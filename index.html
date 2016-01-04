@@ -8,8 +8,8 @@
         <title>Sheet Music</title>
         <link rel="stylesheet" type="text/css" href="semantic/out/semantic.min.css"/>
         <link rel="stylesheet" type="text/css" href="Editor.css"/>
-        <link rel="stylesheet" type="text/css" href="node_modules/semantic-ui-icon/icon.min.css"/>
-        <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="semantic-ui-icon/icon.min.css"/>
+        <script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
     </head>
     
     <body>
@@ -26,21 +26,74 @@
               </div>
              </div>
             <div class="right menu rightmenuposition">
-              <a class="item">  
-                <i class="edit icon"></i>Edit
-              </a>   
-              <div class="ui dropdown item">Setting
+            
+            <div class="ui fitted item list-container">
+            <!--<div class="ui fitted item dropdown list-container">-->
+              
+            <!--<span>================</span>-->
+            
+            <div class="ui fitted item list-container">
+            <!--<div class="menu">  -->
+              
+            <!-- revisions -->
+            <div class="ui item dropdown">
+                Revisions
                 <i class="dropdown icon"></i>
-                <div class="menu">
-                  <div class="item">example</div>
-                  <div class="item">example</div>
-                  <div class="item">example</div>
+                <div id="revision-list" data-selected-revision="__live__" class="menu">
+                  <div class="item new-revision-wrap">
+                    <div class="ui transparent input">
+                      <input id="new-rev" placeholder="Create new revision..." type="text">
+                      <i class="circular plus link icon"></i> 
+                    </div>
+                    <div class="menu"></div>
+                  </div>
+                  
+                  <div class="item revision">
+                    <i class="dropdown icon"></i>
+                    <span class="text">revision 1</span>
+                    <div class="menu">
+                      <div class="item">reverse to this version</div>
+                      <div class="item">show</div>
+                    </div>
+                  </div>
+                  <div class="item revision">
+                    <i class="dropdown icon"></i>
+                    <span class="text">revision 2</span>
+                    <div class="menu">
+                      <div class="item">reverse to this version</div>
+                      <div class="item">show</div>
+                    </div>
+                  </div>
+                  <div class="item revision">
+                    (lateset) ab55c...
+                  </div>
                 </div>
               </div>
-              <a class="ui item">登出 </a>
+            
+            <!-- clone --> 
+            <a href="#" id="clone" class="item">  
+              Clone
+            </a>   
+            
+            <a href="#"  onclick="handler()"  class="item">  
+              <i class="edit icon"></i>Edit
+            </a>   
+            <div class="ui dropdown item">Setting
+              <i class="dropdown icon"></i>
+              <div class="menu">
+                <div class="item">example</div>
+                <div class="item">example</div>
+                <div class="item">example</div>
+              </div>
             </div>
+            <a class="ui item">登出 </a>
+            
+            </div>
+            </div>
+            
           </div>
-        </nav>
+        </div>
+      </nav>
         
         <div class="scroll">
             <div class="ui large vertical menu" id="toolbar">
@@ -55,13 +108,16 @@
                     <button id="tri" class="ui button" data-role="duration" data-value="3">T</button>
                     <button id="six" class="ui button" data-role="duration" data-value="16">s</button>
                     <div class="ui divider"></div>
-                    <button id="stop1" class="ui button" data-role="other" data-value="stop1">W</button>
-                    <button id="stop2" class="ui button" data-role="other" data-value="stop2">H</button>
-                    <button id="stop4" class="ui button" data-role="other" data-value="stop4">Q</button>
-                    <button id="stop8" class="ui button" data-role="other" data-value="stop8">E</button>
-                    <button id="stop16" class="ui button" data-role="other" data-value="stop16">S</button>    
+                    <button id="stop1" class="ui button" data-role="duration" data-value="1r">W</button>
+                    <button id="stop2" class="ui button" data-role="duration" data-value="2r">H</button>
+                    <button id="stop4" class="ui button" data-role="duration" data-value="4r">Q</button>
+                    <button id="stop8" class="ui button" data-role="duration" data-value="8r">E</button>
+                    <button id="stop16" class="ui button" data-role="duration" data-value="16r">S</button>    
                 
                     <div class="ui divider"></div>
+                    <button class="remove ui button active" data-role="note-action" data-value="remove-note">q</button>
+                    <button class="ui button" data-role="note-action" data-value="add-tuplet">T</button>
+                    <button class="remove ui button" data-role="note-action" data-value="remove-tuplet">T</button>
                     <button id="sharp" class="ui button" data-role="other" data-value="sharp">B</button>
                     <button id="drop" class="ui button" data-role="other" data-value="drop">b</button>
                     <button id="dot" class="ui button" data-role="other" data-value="dot">.</button> 
@@ -96,6 +152,66 @@
                 <button class="ui button" data-role="tone">Amp4</button>
                 <button id="add_amp" class="ui button" data-role="add"><i class="large add icon"></i></button>
               </div>
+              
+              <div class="title">Other... </div>
+              <div class="content">
+                  <div class="column">
+                    <h3>Tracks</h3>
+                  </div>
+                  <div class="column">
+                    <button id="track-add" class="ui button">add</button> <button id="track-remove"class="ui button">remove</button>
+                  </div>
+                  <div class="column">
+                    <h3>Measures</h3>
+                  </div>
+                  <div class="column">
+                    <input id="measure-length" type="number"> <button id="measure-length-set"class="ui button">Set</button>
+                  </div>
+              </div>
+              <div class="title"><i class="share alternate icon"></i>Share</div>
+              <div class="content share">
+                <div class="column">
+                  <h3>Short Link:</h3>
+                  <div class="ui input">
+                    <input onClick="this.select();" id="short-link" type="text" placeholder="loading..." readonly>
+                  </div>
+                </div>
+                <div class="column">
+                  <h3>QRCode:</h3>
+                  <dic id="short-link-qrcode" style="display: inline-block;"></dic>
+                </div>
+              </div>
+              
+              <div class="title">Play</div>
+              <div class="content">
+                <div class="column">
+                  <button class="ui button" id="play">Play</button>
+                </div>
+                
+                Bpm
+                <div class="ui input">
+                  <input id="play-bpm" type="number" value="140">
+                </div>
+                
+                Sound
+                <div id="sound-list">
+                  <!-- just use as templete -->
+                  <div class="sound" style="display:none">
+                    <div class="track-id">Track1</div>  
+                    <div class="ui dropdown">
+                      <input type="hidden" value="acoustic_grand_piano">
+                      <div class="text">Acoustic Grand Piano</div>
+                      <i class="dropdown icon"></i>
+                      <div class="menu">
+                        <div class="item active"data-value="acoustic_grand_piano">Acoustic Grand Piano</div>
+                        <div class="item" data-value="test">test</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+              
               </div>
             </div>
         </div>
@@ -280,9 +396,59 @@
       
         </div>
         
-        <script src="semantic/out/semantic.min.js"></script>
-        <script src="Editor.js"></script>
+        <div class="overlay">
+          <div class="mid-wrap">
+            <div class="wrap">
 
+<div class="ui card">
+  <div class="image">
+    <i class="massive file text outline icon"></i>
+  </div>
+  <div class="content">
+    <a class="header">Start Now</a>
+    <div class="meta">
+      <span class="date">No login required!</span>
+    </div>
+    <div class="description">
+      Let's go
+    </div>
+  </div>
+  <div class="extra content">
+    <button id="create-new-sheet" class="fluid ui basic blue button">Create A New Sheet</button>
+  </div>
+</div>
+
+            </div>
+          </div>
+        </div>
+        
+        <script src="semantic/out/semantic.min.js"></script>
+        
+        <script src="/components/vexflow/releases/vexflow-debug.js"></script>
+		    <script src="/components/eventEmitter/EventEmitter.js"></script>
+		    <script src="/components/qrcode.js/qrcode.js"></script>
+    		    
+        <script src="stave_manager.js"></script>
+        <script src="stave_manager_render.js"></script>
+        <script src="stave_manager_bounding_box.js"></script>
+        <script src="stave_manager_effect.js"></script>
+        <script src="stave_manager_mouse_event.js"></script>
+        <script src="stave_manager_edit.js"></script>
+        <script src="stave_manager_color.js"></script>
+        <script src="stave_manager_table.js"></script>
+        <script src="stave_effect.js"></script>
+        <script src="stave_formats.js"></script>
+        
+        <script src="/socket.io/socket.io.js"></script>
+        
+        <script src="/components/MIDI.js/inc/shim/Base64.js"></script>
+        <script src="/components/MIDI.js/inc/shim/Base64binary.js"></script>
+        <script src="/components/MIDI.js/inc/shim/WebAudioAPI.js"></script>
+        <script src="/components/MIDI.js/inc/shim/WebMIDIAPI.js"></script>
+        <script src="/components/MIDI.js/build/MIDI.js"></script>
+        <script src="sound_manager.js"></script>
+        
+        <script src="Editor.js"></script>
     </body>
     
 </html>

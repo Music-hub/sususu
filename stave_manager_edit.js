@@ -106,6 +106,13 @@
 		return temp;
   }
   
+  fn.getMeasureCount = function getMeasureCount () {
+    return this.sheet.getMeasureCount();
+  }
+  fn.getChannelCount = function getChannelCount () {
+    return this.sheet.getChannelCount();
+  }
+  
   // get measure of given index
   fn.getMeasure = function(index) {
     if (!Array.isArray(index) || index.length !== 2) {

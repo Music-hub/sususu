@@ -122,6 +122,7 @@ EffectProcessor.trackEffectSets = [
 			if (items.length < 1) return;
 			var i, firstStave, secondStave;
 			var cols = sheetManager.staveTable.cols;
+			var index;
 			
 			var firstTrack = items[0];
 			var secondTrack = items[items.length - 1];
@@ -130,15 +131,19 @@ EffectProcessor.trackEffectSets = [
 				if (!info.onEnd) {
 					firstStave = firstTrack[i];
 					secondStave = secondTrack[i];
+					index = [0, i];
 				} else {
 					firstStave = firstTrack[i + cols - 1 < firstTrack.length ? i + cols - 1 : firstTrack.length - 1];
 					secondStave = secondTrack[i + cols - 1 < firstTrack.length ? i + cols - 1 : firstTrack.length - 1];
+					index = [0, i + cols - 1 < firstTrack.length ? i + cols - 1 : firstTrack.length - 1];
 				}
 	      var connector = new Vex.Flow.StaveConnector(firstStave, secondStave);
 	      connector.setType(Vex.Flow.StaveConnector.type[info.type || "SINGLE"]);
 	      if (info.text && i === 0) {
 	      	connector.setText(info.text);
 	      }
+	      connector.index = index;
+	      
 				sheetManager.staveDrawables.push(connector)
 			}
 		}
@@ -212,6 +217,7 @@ EffectProcessor.measureEffectSets = [
       if (info.text) {
       	connector.setText(info.text);
       }
+      connector.index = indexes[0];
 			sheetManager.staveDrawables.push(connector)
 		},
 		validate: function (sheetManager, sheet, type, id, indexes, items, datas, fix, change, result) {
@@ -225,5 +231,77 @@ EffectProcessor.measureEffectSets = [
 				}
 			}
 		}
-	}
+	},
+	// handle for volta
+	{
+		postformat: function (sheetManager, sheet, type, id, indexes, items, datas) {
+			if (type !== "volta") return;
+			if (datas.filter(function (item) {
+				return 'object' !== typeof item;
+			}).length > 0) return;
+			var topStave = items[0];
+			var data = datas[0];
+			
+			var text = data.text ? data.text + "." : "";
+			var fakeVolta = new Vex.Flow.Volta(Vex.Flow.Volta.type[data.type], text, topStave.x, 20);
+			fakeVolta.draw = patchs.volta_draw
+
+			topStave.modifiers.push(fakeVolta);
+			// topStave.setVoltaType(Vex.Flow.Volta.type[data.type], text, 20);
+		},
+		validate: function (sheetManager, sheet, type, id, indexes, items, datas, fix, change, result) {
+			if (type !== "volta") return;
+			// if some effect should cross all staves, than it should
+			if (fix && change && change.op === "add") {
+				var measure = indexes[0][1];
+				var i;
+				for (i = change.index; i < change.index + change.count; i++) {
+					sheetManager.addEffect([i, measure], new Effect(type, id, datas[0]));
+				}
+			}
+		}
+	},
+	
 ];
+
+var patchs = {};
+patchs.volta_draw = function () {
+	var Volta = Vex.Flow.Volta;
+	return function(stave, x) {
+	  if (!stave.context) throw new Vex.RERR("NoCanvasContext",
+	    "Can't draw stave without canvas context.");
+	  var ctx = stave.context;
+	  var width = stave.width;
+	  var top_y = stave.getYForTopText(stave.options.num_lines) + this.y_shift;
+	  var vert_height = 1.5 * stave.options.spacing_between_lines_px;
+	  switch(this.volta) {
+	    case Vex.Flow.Volta.type.BEGIN:
+	      ctx.fillRect(this.x + x, top_y, 1, vert_height);
+	      break;
+	    case Vex.Flow.Volta.type.END:
+	      width -= 5;
+	      ctx.fillRect(this.x + width, top_y, 1, vert_height);
+	      break;
+	    case Vex.Flow.Volta.type.BEGIN_END:
+	      width -= 3;
+	      ctx.fillRect(this.x + x, top_y, 1, vert_height);
+	      ctx.fillRect(this.x + width, top_y, 1, vert_height);
+	      break;
+	  }
+	    // If the beginning of a volta, draw measure number
+	  if (this.volta == Volta.type.BEGIN ||
+	      this.volta == Volta.type.BEGIN_END) {
+	    ctx.save();
+	    ctx.setFont(this.font.family, this.font.size, this.font.weight);
+	    ctx.fillText(this.number, this.x + x + 5, top_y + 15);
+	    ctx.restore();
+	  }
+	  if (this.volta == Volta.type.BEGIN ||
+      this.volta == Volta.type.BEGIN_END) {
+	  	ctx.fillRect(this.x + x, top_y, width - x, 1);
+    } else {
+	  	ctx.fillRect(this.x, top_y, width, 1);
+    }
+	  return this;
+	}
+} ();

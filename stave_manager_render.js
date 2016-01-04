@@ -7,6 +7,7 @@
   	var i, j, k, track, measure, noteStruct, notes,
   	    tracks = this.voiceTable.tracks,
   	    measures = this.voiceTable.measures;
+  	var self = this;
   	
   	for (i = 0; i < tracks; i++) {
   		track = this.sheet.tracks[i];
@@ -21,6 +22,41 @@
   				}
   				// note this to align correctly, but this doesn't belong to a note.
   				noteStruct.clef = track.info.clef;
+  				
+  				if (noteStruct.duration.match(/^(w|h|q|\d+)d*r$/)) {
+  				  
+  				  var fakePitch;
+  				  // override position of silent note;
+  				  
+  				  var duration = (/^(w|h|q|\d+)d*r$/).exec(noteStruct.duration)[1];
+  				  var line = 3;
+  				  switch (duration) {
+  				    case "1":
+  				    case "w":
+  				      line = 6
+  				      break;
+  				    case "2":
+  				    case "h":
+  				      line = 4
+  				      break;
+  				    case "4":
+  				    case "q":
+  				      line = 4
+  				      break;
+  				    case "8":
+  				      line = 5
+  				      break;
+  				    case "16":
+  				      line = 5
+  				      break;
+  				    case "32":
+  				      line = 5
+  				      break;
+  				  }
+  				  fakePitch = self.getPitch(line, noteStruct.clef, "C");
+  				  noteStruct.keys = [fakePitch.pitch + "/" + fakePitch.octave];
+  				}
+  				
   				vfNote = new Vex.Flow.StaveNote(noteStruct);
   				vfNote.originalData = note;
   				return vfNote;
@@ -408,6 +444,9 @@
   			nextStave = this.staveTable.staveByColume(0, i + j + 1);
   			connector = new Vex.Flow.StaveConnector(stave, nextStave);
   			connector.setType(Vex.Flow.StaveConnector.type.SINGLE_LEFT);
+  			
+  			connector.index = [j, i / tracks * this.staveTable.cols];
+  			
   			this.staveDrawables.push(connector);
   			
   			var colEnd = (i >= rows - this.staveTable.tracks) ? 
@@ -418,6 +457,9 @@
   			nextStave = this.staveTable.staveByColume(colEnd, i + j + 1);
   			connector2 = new Vex.Flow.StaveConnector(stave, nextStave);
   			connector2.setType(Vex.Flow.StaveConnector.type.SINGLE_RIGHT);
+  			
+  			connector2.index = [j, i / tracks * this.staveTable.cols + colEnd];
+  			
   			this.staveDrawables.push(connector2);
   		}
   	}
