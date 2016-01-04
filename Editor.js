@@ -566,8 +566,35 @@ function startEditor(manager, sheetId, sheetInfo) {
     }
     playSheet(manager, bpm);
   })
+  
+  loadSoundFontList(manager);
 }
-
+var loadSoundFontList = function () {
+  /* global MIDI */
+  var templete = $('#sound-list .sound').detach();
+  templete.css('display', 'block');
+  templete.find('*').unbind();
+  templete.find('.menu').empty();
+  for (var sound in MIDI.GM.byName) {
+    var option = $('<div class="item">')
+    option.attr('data-value', sound)
+    option.text(MIDI.GM.byName[sound].instrument)
+    templete.find('.menu').append(option);
+  }
+  
+  
+  return function(sheetManager) {
+    var tracks = sheetManager.getChannelCount();
+    var i;
+    var item;
+    $('#sound-list').empty();
+    for (i = 0; i < tracks; i++) {
+      item = templete.clone();
+      item.appendTo($('#sound-list'));
+      item.find('.ui.dropdown').dropdown();
+    }
+  }
+}();
 function playSheet(sheet, bpm) {
   var a = new SoundManager;
   a.loadSound();
