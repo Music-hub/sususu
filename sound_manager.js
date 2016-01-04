@@ -140,9 +140,11 @@ SoundManager.prototype.playSheet = function playSheet(sheetManager, bpm, beatVal
       //soundOffsets += 
     }
   }
-  
+  // MIDI.Player.removeListener()
+  /*MIDI.Player.addListener(function(data) { // set it to your own function!
+      console.log(data)
+  });*/
   console.log(MIDI)
-  
 }
 /*
 
