@@ -62,11 +62,12 @@ function SoundManager () {
 
 inherits(SoundManager, MyEventEmitter);
 
-SoundManager.prototype.loadSound = function loadSound() {
+SoundManager.prototype.loadSound = function loadSound(soundFontList) {
   var self = this;
 	MIDI.loadPlugin({
 		soundfontUrl: "//music-hub.github.io/midi-js-soundfonts/FluidR3_GM/",
-		instrument: "acoustic_grand_piano",
+		// instrument: "acoustic_grand_piano",
+		instrument: soundFontList,
 		onprogress: function(state, progress) {
 			console.log(state, progress);
 		},
@@ -122,9 +123,9 @@ SoundManager.prototype.playSheet = function playSheet(sheetManager, bpm, beatVal
             if ('number' !== typeof midiNum) return;
             console.log(midiNum);
             console.log(soundMeasureOffset + soundNoteOffset, soundMeasureOffset + soundNoteOffset + soundNoteLength)
-      			MIDI.setVolume(0, 127);
-      			MIDI.noteOn(0, midiNum, velocity, soundMeasureOffset + soundNoteOffset);
-      			MIDI.noteOff(0, midiNum, soundMeasureOffset + soundNoteOffset + soundNoteLength);
+      			MIDI.setVolume(track, 127);
+      			MIDI.noteOn(track, midiNum, velocity, soundMeasureOffset + soundNoteOffset);
+      			MIDI.noteOff(track, midiNum, soundMeasureOffset + soundNoteOffset + soundNoteLength);
       			
           })
         }

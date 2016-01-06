@@ -706,14 +706,19 @@ var loadSoundFontList = function () {
     $('#sound-list').empty();
     for (i = 0; i < tracks; i++) {
       item = templete.clone();
+      item.find('.track-id').text('Track ' + (i + 1));
       item.appendTo($('#sound-list'));
       item.find('.ui.dropdown').dropdown();
     }
   }
 }();
-function playSheet(sheet, bpm) {
+function playSheet(sheet, bpm, soundFontList) {
+  var sounds = $('#sound-list .sound').find('input').map(function (i ,item) {
+    var _ = $(item);
+    return _.val();
+  })
   var a = new SoundManager;
-  a.loadSound();
+  a.loadSound(sounds);
   a.on('load', function () {
     a.playSheet(sheet, bpm);
   })
