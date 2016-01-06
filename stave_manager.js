@@ -174,6 +174,7 @@ SheetManager.prototype.preDrawSheet = function preDrawSheet() {
 	this.alignNote();
 	this.postNoteFormat();
 	
+	this.emit('post-all-format', this);
 }
 
 // clear the canvas
@@ -183,6 +184,7 @@ SheetManager.prototype._clearCanvas = function _clearCanvas() {
 
 // draw all items of the sheet
 SheetManager.prototype.renderSheet = function renderSheet() {
+	this.emit('pre-draw', this);
 	this._clearCanvas();
 	
 	this.drawStave();
@@ -193,6 +195,7 @@ SheetManager.prototype.renderSheet = function renderSheet() {
 		this.noteBoundingBoxs = this.getAllNoteBoundingBox();
 		this.staveBoundingBoxs = this.getAllStaveBoundingBox();
 	}
+	this.emit('post-draw', this);
 }
 
 // format and draw the sheet, actully combination of `preDrawSheet`, `_clearCanvas`, `renderSheet`
