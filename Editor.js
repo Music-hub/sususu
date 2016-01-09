@@ -120,19 +120,22 @@ $('#phone_chord_pool').on('click','.chord_container #remove',function(){
 
 $('.tabular.menu .item').tab();
 
-$('.accordion')
-  .accordion({
+$('.accordion').accordion({
     
     exclusive: false,
     selector: {
       trigger: '.title'
     }
-  })
-;
+});
 
-$('.ui.dropdown')
-  .dropdown()
-;
+$('.ui.dropdown').dropdown();
+
+$('.ui.setting.item').on('click',function(){
+
+    $('.ui.sidebar').sidebar('toggle');
+
+});
+
 /*
 $('#new-rev').on('focus', function (e) {
   e.preventDefault();
