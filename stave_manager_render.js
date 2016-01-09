@@ -13,7 +13,7 @@
   		track = this.sheet.tracks[i];
   		for (j = 0; j < measures; j++) {
   			measure = this.sheet.tracks[i].measures[j];
-  			notes = measure.notes.map(function (note) {
+  			notes = measure.notes.map(function (note, noteIndex) {
   				var vfNote, noteStruct = {};
   				for (k in note.struct) {
   					if (note.struct.hasOwnProperty(k)) {
@@ -57,7 +57,12 @@
   				  noteStruct.keys = [fakePitch.pitch + "/" + fakePitch.octave];
   				}
   				
-  				vfNote = new Vex.Flow.StaveNote(noteStruct);
+  				try {
+  				  vfNote = new Vex.Flow.StaveNote(noteStruct);
+  				} catch (e) {
+  				  console.error('corrupted note at: ', [i, j, noteIndex]);
+  				  vfNote = new Vex.Flow.StaveNote({keys: ['c/4'], duration: '4r', clef: track.info.clef});
+  				}
   				vfNote.originalData = note;
   				return vfNote;
   			})

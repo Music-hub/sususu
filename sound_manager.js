@@ -1,5 +1,59 @@
 /* global EventEmitter, Vex, inherits, MIDI */
 
+// a setInterval implement based on requestAnimationFrame;
+(function (root) {
+  var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+                              window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+  
+  var id = -1;
+  var counterCount = 0;
+  var counters = {};
+  
+  var currentFrame = null;
+  
+  root._tick = function (current) {
+    currentFrame = null;
+    if (counterCount === 0) return;
+    
+    var i, counter;
+    for (i in counters) {
+      if (counters.hasOwnProperty(i)) {
+        counter = counters[i];
+        if (counter.last >= current) continue;
+        
+        counter.func(Math.max(current - counter.start, 0));
+      }
+    }
+    
+    currentFrame = requestAnimationFrame(root._tick);
+  };
+  
+  root.setRender = function (fn) {
+    id++;
+    counterCount++;
+    
+    counters[id] = {
+      func: fn,
+      last: -1,
+      start: performance.now()
+    };
+    
+    fn(0);
+    
+    if (currentFrame === null) {
+      currentFrame = requestAnimationFrame(root._tick);
+    }
+    return id;
+  };
+  root.clearRender = function (id) {
+    if (!counters[id]) return false;
+    delete counters[id];
+    counterCount--;
+  };
+  
+} (window.Render = {}));
+ 
+
 // general class
 var MyEventEmitter = (function (oldEventEmitter) {
 	function EventEmitter() {
@@ -57,16 +111,23 @@ var MyEventEmitter = (function (oldEventEmitter) {
 } ());
 
 function SoundManager () {
+  this.eventList = [];
+  this.counterId = null;
+  
   MyEventEmitter.call(this);
 }
 
 inherits(SoundManager, MyEventEmitter);
 
-SoundManager.prototype.loadSound = function loadSound() {
+SoundManager.prototype.loadSound = function loadSound(soundFontList) {
   var self = this;
+  soundFontList = Array.prototype.slice.call(soundFontList, 0);
+  
+  console.log(soundFontList)
 	MIDI.loadPlugin({
 		soundfontUrl: "//music-hub.github.io/midi-js-soundfonts/FluidR3_GM/",
-		instrument: "acoustic_grand_piano",
+		// instrument: "acoustic_grand_piano",
+		instrument: soundFontList,
 		onprogress: function(state, progress) {
 			console.log(state, progress);
 		},
@@ -74,6 +135,13 @@ SoundManager.prototype.loadSound = function loadSound() {
 			var delay = 0; // play one note every quarter second
 			var note = 50; // the MIDI note
 			var velocity = 127; // how hard the note hits
+			
+			soundFontList.forEach(function (name, index) {
+			  console.log(index, MIDI.GM.byName[name].number)
+			  MIDI.programChange(index, MIDI.GM.byName[name].number);
+			})
+			
+			
 			// play the note
 		/*	MIDI.setVolume(0, 127);
 			MIDI.noteOn(0, note, velocity, delay);
@@ -87,6 +155,9 @@ SoundManager.prototype.loadSound = function loadSound() {
 
 SoundManager.prototype.playSheet = function playSheet(sheetManager, bpm, beatValue) {
   bpm = bpm || 140;
+  var self = this;
+  
+  this.clearEvent();
   
 	var delay = 0; // play one note every quarter second
 	var note = 50; // the MIDI note
@@ -106,7 +177,7 @@ SoundManager.prototype.playSheet = function playSheet(sheetManager, bpm, beatVal
     for (measure = 0; measure < totalMeasures; measure++) {
       soundNoteOffset = 0;
       voice = sheetManager.voiceTable.staveByTrack(track, measure);
-      voice.tickables.forEach(function (tickable) {
+      voice.tickables.forEach(function (tickable, noteIndex) {
         soundNoteLength = tickable.ticks.numerator 
           / tickable.ticks.denominator 
           / Vex.Flow.RESOLUTION
@@ -122,9 +193,21 @@ SoundManager.prototype.playSheet = function playSheet(sheetManager, bpm, beatVal
             if ('number' !== typeof midiNum) return;
             console.log(midiNum);
             console.log(soundMeasureOffset + soundNoteOffset, soundMeasureOffset + soundNoteOffset + soundNoteLength)
-      			MIDI.setVolume(0, 127);
-      			MIDI.noteOn(0, midiNum, velocity, soundMeasureOffset + soundNoteOffset);
-      			MIDI.noteOff(0, midiNum, soundMeasureOffset + soundNoteOffset + soundNoteLength);
+      			MIDI.setVolume(track, 127);
+      			MIDI.noteOn(track, midiNum, velocity, soundMeasureOffset + soundNoteOffset);
+      			console.log(track, midiNum, velocity, soundMeasureOffset + soundNoteOffset);
+      			self.scheduleEvent('noteon', {
+      			  index: [track, measure, noteIndex],
+      			  midiNum:　midiNum
+      			}, (soundMeasureOffset + soundNoteOffset) * 1000)
+      			
+      			MIDI.noteOff(track, midiNum, soundMeasureOffset + soundNoteOffset + soundNoteLength);
+      			console.log(track, midiNum, soundMeasureOffset + soundNoteOffset + soundNoteLength);
+      			
+      			self.scheduleEvent('noteoff', {
+      			  index: [track, measure, noteIndex],
+      			  midiNum:　midiNum
+      			}, (soundMeasureOffset + soundNoteOffset + soundNoteLength) * 1000)
       			
           })
         }
@@ -140,22 +223,39 @@ SoundManager.prototype.playSheet = function playSheet(sheetManager, bpm, beatVal
       //soundOffsets += 
     }
   }
-  // MIDI.Player.removeListener()
-  /*MIDI.Player.addListener(function(data) { // set it to your own function!
-      console.log(data)
-  });*/
-  console.log(MIDI)
+  this.startEvent()
+  console.log(this, MIDI);
 }
-/*
 
-function test() {
-  var a = new SoundManager;
-  a.loadSound();
-  a.on('load', function () {
-    a.playSheet();
+SoundManager.prototype.clearEvent = function clearEvent() {
+  this.eventList = [];
+}
+
+SoundManager.prototype.scheduleEvent = function scheduleEvent(type, data, time) {
+  this.eventList.push({
+    type: type,
+    data: data,
+    time: time
   })
 }
 
-test();
-
-*/
+SoundManager.prototype.startEvent = function startEvent() {
+  /* global Render */
+  var self = this;
+  this.eventList = this.eventList.sort(function (a, b) {
+    if (a.time == b.time) return 0;
+    return a.time > b.time ? 1 : -1; 
+  })
+  if (this.counterId) Render.clearRender(this.counterId);
+  this.counterId = Render.setRender(function (time) {
+    if (self.eventList.length === 0) return Render.clearRender(self.counterId);
+    var i, head;
+    while (self.eventList.length > 0) {
+      var head = self.eventList[0];
+      if (head.time > time) break;
+      self.eventList.shift();
+      self.emit(head.type, head.data, time);
+    }
+    if (self.eventList.length === 0) return Render.clearRender(self.counterId);
+  })
+}
