@@ -17,18 +17,18 @@
         
         
         <nav id="nav_pc">
-          <div class="ui teal inverted top fixed menu" id="nav">
+          <div class="ui teal inverted top fixed menu" id="nav" style="z-index:99999">
             <div class="header item headposition" style="padding: 0em 1.14286em;">
               <a href="/">
                 <img src="/icon-white.png" style="height: 32px;" alt="Music Hub"></img>
               </a>
             </div>
-            <div class="item">
+            <!--div class="item">
               <div class="ui icon input">
                 <input placeholder="Search..." type="text">
                 <i class="search icon"></i>
               </div>
-             </div>
+             </div -->
             <div class="right menu rightmenuposition">
             
             <div class="ui fitted item list-container">
@@ -79,14 +79,14 @@
               Clone
             </a>   
             
-            <div class="ui dropdown item">Setting
+            <!-- div class="ui dropdown item">Setting
               <i class="dropdown icon"></i>
               <div class="menu">
                 <div class="item">example</div>
                 <div class="item">example</div>
                 <div class="item">example</div>
               </div>
-            </div>
+            </div -->
             <a class="ui item">
               <i class="sign out icon"></i>
               Sign out
@@ -137,16 +137,16 @@
                     <button class="remove ui button active" data-role="note-action" data-value="remove-note">q</button>
                     <button class="ui button" data-role="note-action" data-value="add-tuplet">T</button>
                     <button class="remove ui button" data-role="note-action" data-value="remove-tuplet">T</button>
-                    <button id="sharp" class="ui button" data-role="other" data-value="sharp">B</button>
+                    <!-- button id="sharp" class="ui button" data-role="other" data-value="sharp">B</button>
                     <button id="drop" class="ui button" data-role="other" data-value="drop">b</button>
                     <button id="dot" class="ui button" data-role="other" data-value="dot">.</button> 
                     <button id="conn" class="ui button" data-role="other" data-value="conn">U</button>
                     <button id="tempo" class="ui button" data-role="other">}</button>    
                     <button id="pitch" class="ui button" data-role="other">}</button>    
                     <button id="re1" class="ui button" data-role="other" data-value="re1">$</button>
-                    <button id="re2" class="ui button" data-role="other" data-value="re2">G</button>
+                    <button id="re2" class="ui button" data-role="other" data-value="re2">G</button -->
               </div>
-              <div class="title"><h id=chord>&nbsp;Ï&nbsp;</h> Chord </div>
+              <!--div class="title"><h id=chord>&nbsp;Ï&nbsp;</h> Chord </div>
               <div class="active content">
                 <div id="chord_pool">
                     <div class="chord_container">       
@@ -155,14 +155,10 @@
                         </button>
                         <button class="ui button" data-role="chord">Cmaj7</button>
                     </div>
-                    
-                    <!--i class="small remove circle icon" data-role="delete"></i>
-                    <button class="ui button" data-role="chord">Caug7</button>
-                    <i class="small remove circle icon" data-role="delete"></i>
-                    <button class="ui button" data-role="chord">Caug7</button-->
                     <button id="add_chord" class="ui button" data-role="add"><i class="large add icon"></i></button>
                 </div>
               </div>
+              
               <div class="title"><i class="clockwise rotated options icon"></i> Tone </div>
               <div class="content">                  
                 <button class="ui button" data-role="tone">Amp1</button>
@@ -170,7 +166,7 @@
                 <button class="ui button" data-role="tone">Amp3</button>
                 <button class="ui button" data-role="tone">Amp4</button>
                 <button id="add_amp" class="ui button" data-role="add"><i class="large add icon"></i></button>
-              </div>
+              </div -->
               
               <div class="title">Other... </div>
               <div class="content">
@@ -178,13 +174,15 @@
                     <h3>Tracks</h3>
                   </div>
                   <div class="column">
-                    <button id="track-add" class="ui button">add</button> <button id="track-remove"class="ui button">remove</button>
+                    <button class="track-add" class="ui button">add</button>
+                    <button class="track-remove"class="ui button">remove</button>
                   </div>
                   <div class="column">
                     <h3>Measures</h3>
                   </div>
                   <div class="column">
-                    <input id="measure-length" type="number"> <button id="measure-length-set"class="ui button">Set</button>
+                    <input class="measure-length" type="number">
+                    <button class="measure-length-set"class="ui button">Set</button>
                   </div>
               </div>
               <div class="title"><i class="share alternate icon"></i>Share</div>
@@ -213,7 +211,7 @@
                 </div>
                 
                 Sound
-                <div id="sound-list">
+                <div class="sound-list">
                   <!-- just use as templete -->
                   <div class="sound" style="display:none">
                     <div class="track-id">Track1</div>  
@@ -238,8 +236,12 @@
         <div class="phone_layout">
             <div class="ui four fluid tabular top fixed menu" id="phone_toolbar">
                 <div class="active item" data-tab="tab1"><i class="music icon"></i> Note </div>
-                <div class="item" data-tab="tab2"><h id=chord>&nbsp;Ï&nbsp;</h> Chord </div>
-                <div class="item" data-tab="tab3"><i class="clockwise rotated options icon"></i> Tone </div>
+                <!--div class="item" data-tab="tab2"><h id=chord>&nbsp;Ï&nbsp;</h> Chord </div>
+                <div class="item" data-tab="tab3"><i class="clockwise rotated options icon"></i> Tone </div -->
+                <div class="item" data-tab="tab4"><i class="music icon"></i> other </div>
+                <div class="item" data-tab="tab5"><i class="music icon"></i> share </div>
+                <div class="item" data-tab="tab6"><i class="music icon"></i> play </div>
+                
             </div>
             <div id="tab_content">
                 
@@ -248,28 +250,71 @@
                     <button id="two" class="ui button" data-role="duration" data-value="2">h</button>
                     <button id="four" class="ui button active" data-role="duration" data-value="4">q</button>
                     <button id="eig" class="ui button" data-role="duration" data-value="8">e</button>
-                    <button id="six" class="ui button" data-role="duration" data-value="16">s</button>      
-                    <button id="tri" class="ui button" data-role="duration" data-value="3">T</button>
+                    <button id="six" class="ui button" data-role="duration" data-value="16">s</button> 
                     <button id="six" class="ui button" data-role="duration" data-value="16">s</button>
 
-                    <button id="stop1" class="ui button" data-role="other" data-value="stop1">W</button>
-                    <button id="stop2" class="ui button" data-role="other" data-value="stop2">H</button>
-                    <button id="stop4" class="ui button" data-role="other" data-value="stop4">Q</button>
-                    <button id="stop8" class="ui button" data-role="other" data-value="stop8">E</button>
-                    <button id="stop16" class="ui button" data-role="other" data-value="stop16">S</button>    
+                    <button class="ui button" data-role="duration" data-value="1r">W</button>
+                    <button class="ui button" data-role="duration" data-value="2r">H</button>
+                    <button class="ui button" data-role="duration" data-value="4r">Q</button>
+                    <button class="ui button" data-role="duration" data-value="8r">E</button>
+                    <button class="ui button" data-role="duration" data-value="16r">S</button>
 
 
-                    <button id="sharp" class="ui button" data-role="other" data-value="sharp">B</button>
+                    <button class="remove ui button active" data-role="note-action" data-value="remove-note">q</button>
+                    <button class="ui button" data-role="note-action" data-value="add-tuplet">T</button>
+                    <button class="remove ui button" data-role="note-action" data-value="remove-tuplet">T</button>
+                    <!-- button id="sharp" class="ui button" data-role="other" data-value="sharp">B</button>
                     <button id="drop" class="ui button" data-role="other" data-value="drop">b</button>
                     <button id="dot" class="ui button" data-role="other" data-value="dot">.</button> 
                     <button id="conn" class="ui button" data-role="other" data-value="conn">U</button>
                     <button id="tempo" class="ui button" data-role="other">}</button>    
                     <button id="pitch" class="ui button" data-role="other">}</button>    
                     <button id="re1" class="ui button" data-role="other" data-value="re1">$</button>
-                    <button id="re2" class="ui button" data-role="other" data-value="re2">G</button>
+                    <button id="re2" class="ui button" data-role="other" data-value="re2">G</button -->
                 </div>
-                
-                <div class="ui bottom attached tab segment" data-tab="tab2">
+                <div class="ui bottom attached tab segment" style="height: 150px; overflow-y: auto;" data-tab="tab4">
+                  <div class="column">
+                    <h3>Tracks</h3>
+                  </div>
+                  <div class="column">
+                    <button class="track-add" class="ui button">add</button>
+                    <button class="track-remove"class="ui button">remove</button>
+                  </div>
+                  <div class="column">
+                    <h3>Measures</h3>
+                  </div>
+                  <div class="column">
+                    <input class="measure-length" type="number">
+                    <button class="measure-length-set"class="ui button">Set</button>
+                  </div>
+                  
+                </div>
+                <div class="ui bottom attached tab segment" data-tab="tab5" style="height: 400px; overflow-y: auto;">
+                  
+                  <div class="column">
+                    <h3>Short Link:</h3>
+                    <div class="ui input">
+                      <input onClick="this.select();" id="short-link-mobile" type="text" placeholder="loading..." readonly>
+                    </div>
+                  </div>
+                  <div class="column">
+                    <h3>QRCode:</h3>
+                    <dic id="short-link-qrcode-mobile" style="display: inline-block;"></dic>
+                  </div>
+                </div>
+                <div class="ui bottom attached tab segment" style="height: 400px; overflow-y: auto;" data-tab="tab6">
+                  
+                  <button class="ui button" id="play">Play</button>
+                  Bpm
+                  <div class="ui input">
+                    <input id="play-bpm" type="number" value="140">
+                  </div>
+                  
+                  Sound
+                  <div class="sound-list">
+                  </div>
+                </div>
+                <!-- div class="ui bottom attached tab segment" data-tab="tab2">
                     <div id="phone_chord_pool">
                         <div class="chord_container">       
                             <button class="circular ui icon button" id="remove">
@@ -287,7 +332,7 @@
                     <button class="ui button" data-role="tone">Amp3</button>
                     <button class="ui button" data-role="tone">Amp4</button>
                     <button id="phone_add_amp" class="ui button" data-role="add"><i class="large add icon"></i></button>
-                </div>
+                </div -->
 
             </div>    
         </div>

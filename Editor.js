@@ -275,8 +275,17 @@ function getCurrentSheetLayout () {
     
     if (sheetInfo.shortLink) {
       $('#short-link').val(sheetInfo.shortLink)
+      $('#short-link-mobile').val(sheetInfo.shortLink)
       
       var qrcode = new QRCode(document.getElementById("short-link-qrcode"), {
+          text: sheetInfo.shortLink,
+          width: 200,
+          height: 200,
+          colorDark : "#000000",
+          colorLight : "#ffffff",
+          correctLevel : QRCode.CorrectLevel.M
+      });
+      var qrcode = new QRCode(document.getElementById("short-link-qrcode-mobile"), {
           text: sheetInfo.shortLink,
           width: 200,
           height: 200,
@@ -631,17 +640,19 @@ function startEditor(manager, sheetId, sheetInfo) {
     }
   })
   
-  $("#track-add").click(function () {
+  $(".track-add").click(function () {
     var currentCount = manager.getChannelCount();
     manager.addTrack(currentCount, new Channel([], 'treble', 'C'))
   })
-  $("#track-remove").click(function () {
+  $(".track-remove").click(function () {
     var currentCount = manager.getChannelCount();
     if (currentCount === 1) return;
     manager.removeTrack(currentCount -1 , 1);
   })
-  $("#measure-length-set").click(function () {
-    var newLength = ~~$('#measure-length').val();
+  $(".measure-length-set").click(function () {
+    var newLength = ~~$('.measure-length:visible').val();
+    $('.measure-length').val(newLength);
+    
     if (isNaN(newLength)) return;
     if (newLength <= 0) return;
     manager.setMeasureLength(newLength);
@@ -742,7 +753,7 @@ function startEditor(manager, sheetId, sheetInfo) {
 }
 var loadSoundFontList = function () {
   /* global MIDI */
-  var templete = $('#sound-list .sound').detach();
+  var templete = $('.sound-list .sound').detach();
   templete.css('display', 'block');
   templete.find('*').unbind();
   templete.find('.menu').empty();
@@ -755,20 +766,22 @@ var loadSoundFontList = function () {
   
   
   return function(sheetManager) {
-    var tracks = sheetManager.getChannelCount();
-    var i;
-    var item;
-    $('#sound-list').empty();
-    for (i = 0; i < tracks; i++) {
-      item = templete.clone();
-      item.find('.track-id').text('Track ' + (i + 1));
-      item.appendTo($('#sound-list'));
-      item.find('.ui.dropdown').dropdown();
-    }
+    $('.sound-list').empty()
+    $('.sound-list').each(function () {
+      var tracks = sheetManager.getChannelCount();
+      var item;
+      var i;
+      for (i = 0; i < tracks; i++) {
+        item = templete.clone();
+        item.find('.track-id').text('Track ' + (i + 1));
+        item.appendTo($(this));
+        item.find('.ui.dropdown').dropdown();
+      }
+    })
   }
 }();
 function playSheet(sheet, bpm, soundFontList) {
-  var sounds = $('#sound-list .sound').find('input').map(function (i ,item) {
+  var sounds = $('.sound-list:visible .sound').find('input').map(function (i ,item) {
     var _ = $(item);
     return _.val();
   })
