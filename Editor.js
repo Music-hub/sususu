@@ -766,6 +766,12 @@ var loadSoundFontList = function () {
   
   
   return function(sheetManager) {
+    
+    var sounds = $('.sound-list:visible .sound').find('input').map(function (i ,item) {
+      var _ = $(item);
+      return _.val();
+    })
+    
     $('.sound-list').empty()
     $('.sound-list').each(function () {
       var tracks = sheetManager.getChannelCount();
@@ -775,6 +781,12 @@ var loadSoundFontList = function () {
         item = templete.clone();
         item.find('.track-id').text('Track ' + (i + 1));
         item.appendTo($(this));
+        
+        if (sounds[i]) {
+          item.find('input').val(sounds[i]);
+          item.find('.text').text(MIDI.GM.byName[sounds[i]].instrument)
+        }
+        
         item.find('.ui.dropdown').dropdown();
       }
     })
