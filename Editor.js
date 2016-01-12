@@ -735,9 +735,9 @@ function startEditor(manager, sheetId, sheetInfo) {
     )
   }
   
-  $('#play').click(function () {
+  $('.play').click(function () {
     // test only
-    var bpm = $('#play-bpm').val();
+    var bpm = $('.play-bpm:visible').val();
     bpm = parseInt(bpm, 10);
     if (isNaN(bpm) || bpm <= 0) {
       bpm = 140;
