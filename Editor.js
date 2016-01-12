@@ -216,6 +216,34 @@ function showRevisionList (list) {
   }
 }
 
+function throttle (fn, delay) {
+  var id = null;
+  var newFunc = function newFunc() {
+    clearTimeout(id);
+    id = setTimeout(fn, delay);
+  }
+  return newFunc;
+}
+
+function getCurrentSheetLayout () {
+  var prop = {}
+  var windowSize = $(window).width();
+  var containerWidth;
+  containerWidth = $ ('#edit').width();
+  if (windowSize < 700) {
+    prop.cols = 1;
+    prop.padding = 10
+    prop.width = containerWidth - 20;
+    return prop;
+  }
+  if (windowSize > 700) {
+    prop.cols = Math.floor(windowSize / 400);
+    prop.padding = 20;
+    prop.width = containerWidth - 40;
+    return prop;
+  }
+}
+
 /* global Sheet, SheetManager */
 ;(function () {
   if (!location.pathname.match(/\/editor\/[A-Za-z0-9\-]+\/?/)) return;
@@ -273,7 +301,7 @@ function showRevisionList (list) {
           
     	var manager = new SheetManager(canvas);
     	
-    	manager.setSheet(sheet, {cols: 3, width: 920});
+    	manager.setSheet(sheet, getCurrentSheetLayout());
     	
     	manager.drawSheet();
     	console.log(manager)
@@ -284,6 +312,10 @@ function showRevisionList (list) {
 	      height: height + 'px',
 	      width: width + 'px'
 	    }, 500, function () {
+	      $('#edit').css({
+  	      width: ''
+  	    });
+  	    
 	      $('#edit').css('height', 'auto');
 	      $canvas.css('opacity', '0')
 	      $(this).html('').append($canvas);
@@ -291,6 +323,22 @@ function showRevisionList (list) {
 	        opacity: 1
 	      }, 500);
 	    })
+	    
+	    $(window).on('resize', throttle(function () {
+    	  manager.setSheet('', getCurrentSheetLayout());
+    	  manager.drawSheet();
+    	  
+  	    var height = canvas.height, width = canvas.width;
+  	    
+  	    $('#edit').animate({
+  	      height: height + 'px',
+  	      width: width + 'px'
+  	    }, 500, function () {
+  	      $('#edit').css({
+    	      width: ''
+    	    });
+  	    });
+	    }, 500))
 	    
 	    startEditor(manager, sheetId, sheetInfo);
       
