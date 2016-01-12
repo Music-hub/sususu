@@ -641,15 +641,18 @@ function startEditor(manager, sheetId, sheetInfo) {
   })
   
   $(".track-add").click(function () {
+    if (!isLive) return;
     var currentCount = manager.getChannelCount();
     manager.addTrack(currentCount, new Channel([], 'treble', 'C'))
   })
   $(".track-remove").click(function () {
+    if (!isLive) return;
     var currentCount = manager.getChannelCount();
     if (currentCount === 1) return;
     manager.removeTrack(currentCount -1 , 1);
   })
   $(".measure-length-set").click(function () {
+    if (!isLive) return;
     var newLength = ~~$('.measure-length:visible').val();
     $('.measure-length').val(newLength);
     
